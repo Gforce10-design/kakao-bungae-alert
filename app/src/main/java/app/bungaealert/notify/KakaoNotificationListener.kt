@@ -7,28 +7,31 @@ import android.os.Bundle
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.util.Log
-import app.bungaealert.BungaeApp
-import app.bungaealert.alert.dispatchAlert
-import app.bungaealert.data.DetectionRecord
-import app.bungaealert.detect.AlertMode
-import app.bungaealert.detect.ChatMatcher
-import app.bungaealert.detect.DecisionPolicy
-import app.bungaealert.detect.KakaoNoticeParser
 import app.bungaealert.detect.KakaoPackages
 import app.bungaealert.detect.RawKakaoMessage
 import app.bungaealert.detect.RawKakaoNotice
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.launch
-import java.util.UUID
 
 class KakaoNotificationListener : NotificationListenerService() {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    override fun onListenerConnected() {
+        try {
+            ListenerRuntime.onConnected(this)
+            ListenerRuntime.ensure(this, fromWatchdog = false)
+        } catch (t: Throwable) {
+            Log.e(TAG, "onListenerConnected failed", t)
+        }
+    }
+
+    override fun onListenerDisconnected() {
+        try {
+            ListenerRuntime.onDisconnected(this)
+            ListenerRuntime.requestRebind(this)
+        } catch (t: Throwable) {
+            Log.e(TAG, "onListenerDisconnected failed", t)
+        }
+    }
 
     override fun onDestroy() {
-        scope.cancel()
+        ListenerRuntime.onDestroyed(this)
         super.onDestroy()
     }
 
@@ -38,73 +41,17 @@ class KakaoNotificationListener : NotificationListenerService() {
 
     override fun onNotificationPosted(sbn: StatusBarNotification, rankingMap: RankingMap?) {
         try {
-            handle(sbn, rankingMap)
+            val packageName = sbn.packageName
+            val key = sbn.key.orEmpty()
+            val kakao = packageName == KakaoPackages.KAKAO_TALK
+            ListenerRuntime.markCallback(this, kakao, key)
+            if (!kakao) return
+            val importance = rankingImportance(sbn, rankingMap)
+            val raw = extract(sbn, importance)
+            val pending = sbn.notification.contentIntent
+            KakaoNoticePipeline.enqueue(PostedNotice(raw, pending))
         } catch (t: Throwable) {
-            Log.e(TAG, "notification handling failed", t)
-        }
-    }
-
-    private fun handle(sbn: StatusBarNotification, rankingMap: RankingMap?) {
-        val importance = rankingImportance(sbn, rankingMap)
-        if (!KakaoPackages.shouldRead(sbn.packageName, importance)) return
-        val raw = extract(sbn, importance)
-        val messages = KakaoNoticeParser.parse(raw)
-        val app = BungaeApp.instance
-        val rules = app.graph.rules.current().filter { it.enabled }
-        if (rules.isEmpty()) return
-        for (message in messages) {
-            if (message.text.isBlank()) continue
-            val matched = rules.filter { ChatMatcher.matches(it, message.chatName) }
-            if (matched.isEmpty()) continue
-            if (!app.graph.dedupe.shouldProcess(message.chatName, message.text)) continue
-            val types = matched.flatMap { it.types }.toSet()
-            if (types.isEmpty()) continue
-            val mode = if (matched.any { it.alertMode == AlertMode.REPEAT }) AlertMode.REPEAT else AlertMode.ONCE
-            val kakaoIntent = sbn.notification.contentIntent
-            scope.launch {
-                val settings = app.graph.settings.current()
-                val judges = app.graph.judges()
-                val evaluation = DecisionPolicy.evaluate(
-                    text = message.text,
-                    enabled = types,
-                    sensitivity = settings.sensitivity,
-                    band = settings.borderlineBand,
-                    judges = judges,
-                    chatName = message.chatName,
-                    sender = message.sender,
-                )
-                if (!evaluation.breakdown.mediaOrEmpty) {
-                    app.graph.log.add(
-                        DetectionRecord(
-                            id = UUID.randomUUID().toString(),
-                            atMillis = System.currentTimeMillis(),
-                            chatName = message.chatName,
-                            sender = message.sender,
-                            text = message.text,
-                            score = evaluation.relevantScore,
-                            meetupScore = evaluation.breakdown.meetup,
-                            giveawayScore = evaluation.breakdown.giveaway,
-                            alerted = evaluation.alert,
-                            alertType = evaluation.alertType?.wire,
-                            summary = evaluation.summary,
-                        ),
-                    )
-                }
-                if (evaluation.alert) {
-                    val id = UUID.randomUUID().toString()
-                    val snippet = message.text.take(180)
-                    dispatchAlert(
-                        context = app,
-                        id = id,
-                        chatName = message.chatName,
-                        body = snippet,
-                        type = evaluation.alertType,
-                        mode = mode,
-                        seconds = settings.maxRingSeconds,
-                        kakao = kakaoIntent,
-                    )
-                }
-            }
+            Log.e(TAG, "notification snapshot failed", t)
         }
     }
 

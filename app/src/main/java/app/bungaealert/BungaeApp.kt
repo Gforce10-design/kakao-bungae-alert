@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import app.bungaealert.ai.JudgeFactory
 import app.bungaealert.ai.NtfySubscribeService
 import app.bungaealert.ai.NtfyWatchdogWorker
@@ -16,6 +17,8 @@ import app.bungaealert.data.SettingsRepository
 import app.bungaealert.detect.AiJudge
 import app.bungaealert.detect.BackendIds
 import app.bungaealert.detect.DedupeWindow
+import app.bungaealert.notify.ListenerRuntime
+import app.bungaealert.notify.ListenerWatchdogWorker
 
 class BungaeApp : Application() {
     lateinit var graph: AppGraph
@@ -27,6 +30,8 @@ class BungaeApp : Application() {
         graph = AppGraph(this)
         AppVisibility.install()
         NtfyWatchdogWorker.schedule(this)
+        ListenerWatchdogWorker.schedule(this)
+        ListenerRuntime.ensure(this, fromWatchdog = false)
         val settings = graph.settings.current()
         if (BackendIds.GROK_WEBHOOK in settings.enabledBackends &&
             graph.secrets.get(SecretStore.GROK_URL).isNotBlank()
@@ -55,12 +60,18 @@ class AppGraph(private val app: Context) {
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent?) {
         if (intent?.action != Intent.ACTION_BOOT_COMPLETED) return
-        val app = context.applicationContext as? BungaeApp ?: return
+        val appContext = context.applicationContext
+        try {
+            ListenerRuntime.ensure(appContext, fromWatchdog = false)
+        } catch (t: Throwable) {
+            Log.e("KakaoListener", "rebind after boot failed", t)
+        }
+        val app = appContext as? BungaeApp ?: return
         val settings = app.graph.settings.current()
         if (BackendIds.GROK_WEBHOOK in settings.enabledBackends &&
             app.graph.secrets.get(SecretStore.GROK_URL).isNotBlank()
         ) {
-            NtfySubscribeService.start(context)
+            NtfySubscribeService.start(appContext)
         }
     }
 }
