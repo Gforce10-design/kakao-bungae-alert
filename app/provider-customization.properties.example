@@ -1,0 +1,10 @@
+# Copy to provider-customization.properties (same directory) before using
+# Claude subscription login. API keys do not need this value.
+#
+# OAuth requests must open their system prompt with the identifying line
+# Claude Code itself sends, or the endpoint rejects them. OpenMinis ships
+# this empty in its public mirror (see BUILDING.md) and points at other
+# GPL/open clients that declare the same line. The one-line default below
+# is that publicly documented identifier, not Anthropic's full system prompt.
+# Replace it if the endpoint starts requiring a newer line.
+ANTHROPIC_OAUTH_IDENTIFIER_PROMPT=You are Claude Code, Anthropic's official CLI for Claude.

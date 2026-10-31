@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">번개알림</string>
+    <string name="channel_once">번개·선착순 알림</string>
+    <string name="channel_once_desc">모집 글과 선착순 나눔을 한 번 알려 줍니다.</string>
+    <string name="channel_alarm">확인 전까지 반복</string>
+    <string name="channel_alarm_desc">확인할 때까지 알람처럼 울립니다.</string>
+    <string name="channel_ntfy">그록 응답 대기</string>
+    <string name="channel_ntfy_desc">그록 봇 판정 응답을 받기 위해 ntfy에 연결되어 있습니다.</string>
+</resources>

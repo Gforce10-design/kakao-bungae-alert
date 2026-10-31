@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.Bungae" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">#FF3D1F00</item>
+        <item name="android:navigationBarColor">#FFFFF8F1</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+</resources>
