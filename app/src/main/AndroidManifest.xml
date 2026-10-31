@@ -49,6 +49,7 @@
             android:exported="false"
             android:launchMode="singleInstance"
             android:showWhenLocked="true"
+            android:theme="@style/Theme.Bungae.Alarm"
             android:turnScreenOn="true" />
 
         <service
