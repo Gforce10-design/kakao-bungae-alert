@@ -1,8 +1,10 @@
+import org.gradle.api.tasks.testing.Test
 import java.util.Properties
 
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.plugin.compose")
+    id("app.cash.paparazzi")
 }
 
 val oauthProps = Properties().apply {
@@ -83,7 +85,13 @@ android {
 
     testOptions {
         unitTests.isReturnDefaultValues = true
+        unitTests.isIncludeAndroidResources = true
     }
+}
+
+tasks.withType<Test>().configureEach {
+    maxHeapSize = "2g"
+    systemProperty("paparazzi.snapshot.dir", rootProject.file("docs/screenshots").absolutePath)
 }
 
 dependencies {
@@ -99,7 +107,6 @@ dependencies {
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
-    implementation("androidx.compose.material:material-icons-extended")
     debugImplementation("androidx.compose.ui:ui-tooling")
 
     implementation("androidx.browser:browser:1.9.0")
