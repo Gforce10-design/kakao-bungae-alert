@@ -13,6 +13,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Check stable debug keystore
+        run: |
+          set -euo pipefail
+          test -f debug.keystore
+          keytool -list -keystore debug.keystore -storepass android -alias androiddebugkey
+
       - uses: actions/setup-java@v4
         with:
           distribution: temurin

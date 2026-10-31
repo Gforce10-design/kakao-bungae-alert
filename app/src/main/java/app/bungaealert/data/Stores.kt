@@ -34,6 +34,7 @@ data class AppSettings(
     val copilotModel: String = "gpt-4.1",
     val grokHeaderName: String = "Authorization",
     val subscriptionRiskAccepted: Boolean = false,
+    val listenerKeepAlive: Boolean = true,
 )
 
 data class DetectionRecord(
@@ -109,6 +110,7 @@ class SettingsRepository(context: Context) {
             put("copilotModel", settings.copilotModel)
             put("grokHeaderName", settings.grokHeaderName)
             put("subscriptionRiskAccepted", settings.subscriptionRiskAccepted)
+            put("listenerKeepAlive", settings.listenerKeepAlive)
         }
 
         fun fromJson(json: JSONObject): AppSettings = AppSettings(
@@ -130,6 +132,7 @@ class SettingsRepository(context: Context) {
             copilotModel = json.optString("copilotModel", "gpt-4.1"),
             grokHeaderName = json.optString("grokHeaderName", "Authorization"),
             subscriptionRiskAccepted = json.optBoolean("subscriptionRiskAccepted"),
+            listenerKeepAlive = json.optBoolean("listenerKeepAlive", true),
         )
     }
 }

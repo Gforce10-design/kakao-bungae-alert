@@ -37,6 +37,8 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -48,12 +50,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import app.bungaealert.BungaeApp
+import app.bungaealert.MainActivity
+import app.bungaealert.notify.ListenerRuntime
 import app.bungaealert.ai.NtfySubscribeService
 import app.bungaealert.auth.ClaudeSubscription
 import app.bungaealert.auth.CodexSubscription
@@ -119,9 +126,17 @@ fun RootScreen() {
             }
         },
     ) { padding ->
+        val activity = context as? android.app.Activity
+        LaunchedEffect(settings.onboardingDone) {
+            if (!settings.onboardingDone) return@LaunchedEffect
+            if (activity?.intent?.getStringExtra(MainActivity.EXTRA_ROUTE) != "status") return@LaunchedEffect
+            nav.navigate("status") { launchSingleTop = true }
+            activity.intent.removeExtra(MainActivity.EXTRA_ROUTE)
+        }
         NavHost(nav, startDestination = start, modifier = Modifier.padding(padding)) {
             composable("onboarding") { OnboardingScreen { graph.settings.update(graph.settings.current().copy(onboardingDone = true)); nav.navigate("home") { popUpTo("onboarding") { inclusive = true } } } }
             composable("home") { HomeScreen(nav) }
+            composable("status") { ListenerStatusScreen() }
             composable("rules") { RulesScreen() }
             composable("log") { LogScreen() }
             composable("test") { TestScreen() }
@@ -135,6 +150,14 @@ fun RootScreen() {
 private fun OnboardingScreen(onDone: () -> Unit) {
     val context = LocalContext.current
     var tick by remember { mutableIntStateOf(0) }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) tick++
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { tick++ }
     val steps = listOf(
         Step("알림 접근", "카카오톡 알림을 읽으려면 알림 접근 권한이 필요합니다. 무음 대화방도 채널 중요도와 상관없이 읽습니다.", Permissions.listenerEnabled(context)) { context.safeStart(Permissions.listenerSettings()) },
@@ -144,11 +167,18 @@ private fun OnboardingScreen(onDone: () -> Unit) {
         },
         Step("전체 화면", "반복 알림이 잠금 화면 위로 뜨려면 Android 14 이상에서 전체 화면 인텐트를 허용해야 합니다.", Permissions.fullScreenAllowed(context)) { context.safeStart(Permissions.fullScreenSettings(context)) },
         Step("방해금지 예외", "방해금지 중에도 울리려면 이 앱을 예외로 허용하세요.", Permissions.dndAllowed(context)) { context.safeStart(Permissions.dndSettings()) },
-        Step("배터리", "삼성 폰에서는 배터리 제한을 해제해야 알림 감시가 끊기지 않습니다. Galaxy S25 Ultra도 마찬가지입니다.", Permissions.batteryUnrestricted(context)) { context.safeStart(Permissions.batterySettings(context)) },
+        Step("배터리", "Android 배터리 최적화 제외입니다. 삼성에서는 이것만으로 잠자기 목록에서 빠지지 않습니다.", Permissions.batteryUnrestricted(context)) { context.safeStart(Permissions.batterySettings(context)) },
+        Step(
+            "삼성 잠자기",
+            if (Permissions.isSamsung()) "배터리 및 디바이스 케어 → 배터리 → 백그라운드 사용 제한에서 잠자는 앱·깊게 잠자는 앱을 빼고, 잠들지 않는 앱에 넣으세요. 사용하지 않는 앱 절전도 끄거나 이 앱을 예외로 두세요. 앱은 그 목록에 들어 있는지를 읽지 못합니다." else "이 기기는 삼성이 아닙니다. 이 단계는 지나도 됩니다.",
+            !Permissions.isSamsung(),
+        ) { context.safeStart(Permissions.samsungBackgroundList(2)) },
+        Step("제한된 설정", "파일로 설치한 앱은 Android 13 이상에서 알림 접근이 막힐 수 있습니다. 앱 정보의 메뉴에서 제한된 설정을 허용한 뒤 알림 접근을 켜세요.", Permissions.listenerEnabled(context)) { context.safeStart(Permissions.appDetails(context)) },
     )
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text("처음 설정", style = MaterialTheme.typography.headlineMedium)
         Text("번개알림은 카카오톡 알림에서 번개모임 모집과 선착순 나눔만 골라 바로 알려 줍니다. 광고와 분석 도구는 없습니다.")
+        if (tick < 0) Text("")
         steps.forEach { step ->
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -176,12 +206,13 @@ private fun HomeScreen(nav: NavHostController) {
     var refresh by remember { mutableIntStateOf(0) }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text("번개알림", style = MaterialTheme.typography.headlineMedium)
-        Text(if (Permissions.listenerEnabled(context)) "카카오톡 알림을 읽고 있습니다." else "알림 접근이 꺼져 있습니다. 설정에서 켜 주세요.")
+        Text(homeListenerLine(context))
         Text("민감도 ${settings.sensitivity} · 기준 ${Sensitivity.cutoff(settings.sensitivity)}점")
         Text("감시 규칙 ${rules.count { it.enabled }}개")
         val last = log.firstOrNull()
         Text(if (last == null) "아직 기록이 없습니다." else "최근: ${last.chatName} ${last.score}점 ${if (last.alerted) "알림" else "통과"}")
         Button(onClick = { nav.navigate("rules") }) { Text("규칙 만들기") }
+        OutlinedButton(onClick = { nav.navigate("status") }) { Text("연결 상태") }
         OutlinedButton(onClick = { refresh++ }) { Text("권한 상태 새로고침") }
         if (refresh >= 0) {
             Text(permissionSummary(context))
@@ -189,8 +220,19 @@ private fun HomeScreen(nav: NavHostController) {
     }
 }
 
+private fun homeListenerLine(context: Context): String {
+    val access = Permissions.listenerEnabled(context)
+    val bound = ListenerRuntime.bound
+    return when {
+        !access -> "알림 접근이 꺼져 있습니다. 연결 상태에서 켜 주세요."
+        bound -> "알림 접근이 허용됐고, 리스너가 연결되어 있습니다."
+        else -> "알림 접근은 허용돼 있지만 리스너가 연결되지 않았습니다."
+    }
+}
+
 private fun permissionSummary(context: Context): String = listOf(
     "알림 접근" to Permissions.listenerEnabled(context),
+    "리스너 연결" to ListenerRuntime.bound,
     "알림 표시" to Permissions.notificationsAllowed(context),
     "전체 화면" to Permissions.fullScreenAllowed(context),
     "방해금지" to Permissions.dndAllowed(context),
@@ -453,6 +495,7 @@ private fun SettingsScreen(nav: NavHostController) {
         OutlinedButton(onClick = { context.safeStart(Permissions.fullScreenSettings(context)) }, modifier = Modifier.fillMaxWidth()) { Text("전체 화면 인텐트") }
         OutlinedButton(onClick = { context.safeStart(Permissions.dndSettings()) }, modifier = Modifier.fillMaxWidth()) { Text("방해금지 예외") }
         OutlinedButton(onClick = { context.safeStart(Permissions.batterySettings(context)) }, modifier = Modifier.fillMaxWidth()) { Text("배터리 최적화 예외") }
+        OutlinedButton(onClick = { nav.navigate("status") }, modifier = Modifier.fillMaxWidth()) { Text("연결 상태") }
         TextButton(onClick = { nav.navigate("oss") }) { Text("오픈소스 고지") }
         if (status.isNotBlank()) Text(status)
         if (!graph.secrets.available) Text("암호화 저장소를 열지 못했습니다. 키를 저장할 수 없습니다.")
