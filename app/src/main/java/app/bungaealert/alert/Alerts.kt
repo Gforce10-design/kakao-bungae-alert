@@ -273,7 +273,7 @@ class AlarmRingService : Service() {
             .setSilent(true)
             .setFullScreenIntent(activity, true)
             .setContentIntent(activity)
-            .addAction(0, "확인하고 카카오톡 열기", stop)
+            .addAction(0, "카톡 열기", stop)
             .build()
     }
 
