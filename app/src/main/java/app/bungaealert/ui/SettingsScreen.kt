@@ -144,6 +144,7 @@ data class SettingsActions(
     val onKeepAlive: (Boolean) -> Unit = {},
     val onSamsung: (Int) -> Unit = {},
     val onOpenOss: () -> Unit = {},
+    val onOpenHelp: () -> Unit = {},
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -152,6 +153,7 @@ fun SettingsRoute(
     onOpenStatus: () -> Unit,
     onOpenTrial: () -> Unit,
     onOpenOss: () -> Unit,
+    onOpenHelp: () -> Unit,
 ) {
     val context = LocalContext.current
     val graph = (context.applicationContext as BungaeApp).graph
@@ -337,6 +339,7 @@ fun SettingsRoute(
                 openSetting(context, Permissions.samsungBackgroundList(type), "삼성 배터리 화면을 열지 못했습니다.")
             },
             onOpenOss = onOpenOss,
+            onOpenHelp = onOpenHelp,
         ),
     )
     if (risk) {
@@ -600,6 +603,11 @@ private fun ConnectionTab(model: SettingsModel, actions: SettingsActions) {
 
 @Composable
 private fun NoticesTab(model: SettingsModel, actions: SettingsActions) {
+    SectionLabel("사용법")
+    SurfaceCard(contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 4.dp)) {
+        CheckLine("사용법", onClick = actions.onOpenHelp)
+    }
+    Spacer(Modifier.height(16.dp))
     SectionLabel("구독 로그인")
     SurfaceCard {
         Text(

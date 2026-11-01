@@ -38,18 +38,25 @@ fun RootScreen() {
                     nav.navigate("home") { popUpTo("onboarding") { inclusive = true } }
                 }
             }
-            composable("home") { HomeRoute(onStatus = { nav.navigate("status") { launchSingleTop = true } }) }
+            composable("home") {
+                HomeRoute(
+                    onStatus = { nav.navigate("status") { launchSingleTop = true } },
+                    onGuide = { nav.navigate("help") { launchSingleTop = true } },
+                )
+            }
             composable("rules") { RulesRoute() }
             composable("settings") {
                 SettingsRoute(
                     onOpenStatus = { nav.navigate("status") { launchSingleTop = true } },
                     onOpenTrial = { nav.navigate("trial") { launchSingleTop = true } },
                     onOpenOss = { nav.navigate("oss") { launchSingleTop = true } },
+                    onOpenHelp = { nav.navigate("help") { launchSingleTop = true } },
                 )
             }
             composable("status") { StatusRoute(onBack = { nav.popBackStack() }) }
             composable("trial") { TrialRoute(onBack = { nav.popBackStack() }) }
             composable("oss") { OssScreen(onBack = { nav.popBackStack() }) }
+            composable("help") { HelpScreen(onBack = { nav.popBackStack() }) }
         }
     }
 }
@@ -57,7 +64,7 @@ fun RootScreen() {
 private fun tabFor(route: String?): String? = when (route) {
     "home", "status" -> "home"
     "rules" -> "rules"
-    "settings", "oss", "trial" -> "settings"
+    "settings", "oss", "trial", "help" -> "settings"
     else -> null
 }
 

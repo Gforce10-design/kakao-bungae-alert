@@ -59,6 +59,9 @@ class ScreenScreenshots {
     @Test fun settingsJudgesLight() = shot("settings_judges_light", dark = false, tab = "settings") { SettingsScreen(settings(SettingsTab.Judges)) }
     @Test fun settingsJudgesDark() = shot("settings_judges_dark", dark = true, tab = "settings") { SettingsScreen(settings(SettingsTab.Judges)) }
 
+    @Test fun helpLight() = shot("help_light", dark = false, tab = "settings") { HelpScreen({}) }
+    @Test fun helpDark() = shot("help_dark", dark = true, tab = "settings") { HelpScreen({}) }
+
     @Test fun onboardingLight() = shot("onboarding_light", dark = false, tab = null) { onboarding() }
     @Test fun onboardingDark() = shot("onboarding_dark", dark = true, tab = null) { onboarding() }
 

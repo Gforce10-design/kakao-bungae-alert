@@ -46,10 +46,11 @@ import app.bungaealert.detect.PostType
 import app.bungaealert.notify.ListenerRuntime
 
 @Composable
-fun HomeRoute(onStatus: () -> Unit) {
+fun HomeRoute(onStatus: () -> Unit, onGuide: () -> Unit) {
     val context = LocalContext.current
     val graph = (context.applicationContext as BungaeApp).graph
     val log by graph.log.state.collectAsState()
+    val rules by graph.rules.state.collectAsState()
     var tick by remember { mutableIntStateOf(0) }
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
@@ -76,6 +77,8 @@ fun HomeRoute(onStatus: () -> Unit) {
                 onStatus()
             }
         },
+        showGuide = rules.isEmpty(),
+        onGuide = onGuide,
     )
 }
 
@@ -85,6 +88,8 @@ fun HomeScreen(
     groups: List<DetectionGroupUi>,
     onBanner: () -> Unit,
     modifier: Modifier = Modifier,
+    showGuide: Boolean = false,
+    onGuide: () -> Unit = {},
 ) {
     LazyColumn(
         modifier = modifier.fillMaxSize(),
@@ -93,6 +98,13 @@ fun HomeScreen(
     ) {
         item { ScreenTitle("번개알림") }
         item { ListenerBanner(health, onBanner) }
+        if (showGuide) {
+            item {
+                SurfaceCard(contentPadding = PaddingValues(vertical = 4.dp)) {
+                    CheckLine("사용법", onClick = onGuide)
+                }
+            }
+        }
         if (groups.isEmpty()) {
             item {
                 EmptyPane(
