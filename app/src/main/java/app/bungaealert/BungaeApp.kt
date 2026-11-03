@@ -19,6 +19,7 @@ import app.bungaealert.detect.BackendIds
 import app.bungaealert.detect.DedupeWindow
 import app.bungaealert.notify.ListenerRuntime
 import app.bungaealert.notify.ListenerWatchdogWorker
+import app.bungaealert.update.UpdateCheckWorker
 
 class BungaeApp : Application() {
     lateinit var graph: AppGraph
@@ -31,6 +32,7 @@ class BungaeApp : Application() {
         AppVisibility.install()
         NtfyWatchdogWorker.schedule(this)
         ListenerWatchdogWorker.schedule(this)
+        UpdateCheckWorker.schedule(this)
         ListenerRuntime.ensure(this, fromWatchdog = false)
         val settings = graph.settings.current()
         if (BackendIds.GROK_WEBHOOK in settings.enabledBackends &&

@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -71,6 +72,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
@@ -142,14 +144,14 @@ private fun BungaeBottomBar(selected: String, onTab: (String) -> Unit) {
                     Box(
                         Modifier
                             .clip(RoundedCornerShape(999.dp))
-                            .background(if (active) MaterialTheme.colorScheme.primaryContainer else Color.Transparent)
+                            .background(if (active) MaterialTheme.colorScheme.primary else Color.Transparent)
                             .padding(horizontal = 16.dp, vertical = 4.dp),
                     ) {
                         Icon(
                             tab.icon,
                             contentDescription = null,
                             modifier = Modifier.size(22.dp),
-                            tint = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            tint = if (active) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                     Spacer(Modifier.height(2.dp))
@@ -315,19 +317,33 @@ fun BungaeChip(label: String, selected: Boolean, onClick: () -> Unit, modifier: 
         label = "chipText",
     )
     val border = if (selected) Color.Transparent else MaterialTheme.colorScheme.outline
-    Text(
-        label,
-        modifier = modifier
-            .heightIn(min = 48.dp)
-            .clip(RoundedCornerShape(999.dp))
-            .border(1.dp, border, RoundedCornerShape(999.dp))
-            .background(background)
+    Box(
+        modifier
+            .defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
+            .testTag("bungaeChipTouch")
             .clickable(role = Role.Button, onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 8.dp)
             .semantics { this.selected = selected },
-        style = MaterialTheme.typography.labelLarge,
-        color = foreground,
-    )
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(
+            Modifier
+                .heightIn(min = 36.dp)
+                .testTag("bungaeChipPill")
+                .clip(RoundedCornerShape(999.dp))
+                .border(1.dp, border, RoundedCornerShape(999.dp))
+                .background(background)
+                .padding(horizontal = 14.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                label,
+                style = MaterialTheme.typography.labelLarge,
+                color = foreground,
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+            )
+        }
+    }
 }
 
 @Composable
@@ -335,6 +351,7 @@ fun ChipRow(labels: List<String>, selected: Int, onSelect: (Int) -> Unit, modifi
     Row(
         modifier.horizontalScroll(rememberScrollState()),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         labels.forEachIndexed { index, label ->
             BungaeChip(label = label, selected = index == selected, onClick = { onSelect(index) })

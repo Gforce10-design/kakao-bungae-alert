@@ -22,7 +22,7 @@
 
 ## 디버그 APK 받아 설치하기
 
-스토어에는 올리지 않습니다. GitHub Actions가 푸시와 풀 리퀘스트마다 디버그 APK를 만들고, 그 실행의 **Artifacts**에 `bungae-debug-apk`로 올립니다. 릴리스는 만들지 않습니다.
+스토어에는 올리지 않습니다. GitHub Actions가 푸시와 풀 리퀘스트마다 디버그 APK를 만들고, 그 실행의 **Artifacts**에 `bungae-debug-apk`로 올립니다. `v*` 태그를 푸시하면 Release APK 워크플로가 같은 키로 서명한 APK를 그 GitHub Release에 첨부합니다. 앱은 새 릴리스가 있으면 알림을 띄우고, 알림을 누르면 그 페이지가 열립니다. 설치는 받은 APK를 직접 실행하는 방식입니다.
 
 1. 저장소의 **Actions** 탭에서 가장 최근 `Debug APK` 실행을 엽니다.
 2. 실행이 성공하면 아래 Artifacts에서 `bungae-debug-apk`를 받아 압축을 풉니다. `app-debug.apk`가 들어 있습니다.

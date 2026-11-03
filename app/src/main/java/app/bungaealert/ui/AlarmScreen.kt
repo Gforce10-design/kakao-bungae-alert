@@ -40,11 +40,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-private val AlarmTop = Color(0xFFC43428)
-private val AlarmMid = Color(0xFFA51C16)
-private val AlarmBottom = Color(0xFF7A120E)
-private val AlarmInk = Color(0xFFFFF8F4)
-private val AlarmButton = Color(0xFF1A120E)
+private val AlarmTop = Color(0xFFDC1E28)
+private val AlarmMid = Color(0xFFC4161E)
+private val AlarmBottom = Color(0xFF8E0E14)
+private val AlarmInk = Color(0xFFFFFFFF)
+private val AlarmButton = Color(0xFF111418)
 private val Pill = RoundedCornerShape(28.dp)
 
 @Composable
@@ -101,7 +101,7 @@ fun AlarmScreen(
         Text(
             copy.eyebrow,
             style = MaterialTheme.typography.labelLarge,
-            color = Color(0xFFFFE8E4),
+            color = Color.White.copy(alpha = 0.86f),
             textAlign = TextAlign.Center,
         )
         Spacer(Modifier.height(8.dp))

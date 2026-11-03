@@ -5,7 +5,10 @@
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">false</item>
         <item name="android:windowLightNavigationBar">false</item>
-        <item name="android:windowBackground">#FF12100E</item>
+        <item name="android:colorPrimary">#FF4C8DFF</item>
+        <item name="android:colorPrimaryDark">#FF0E1013</item>
+        <item name="android:colorAccent">#FF4C8DFF</item>
+        <item name="android:windowBackground">#FF0E1013</item>
         <item name="android:forceDarkAllowed">false</item>
         <item name="android:enforceStatusBarContrast">false</item>
         <item name="android:enforceNavigationBarContrast">false</item>
