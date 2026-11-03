@@ -148,9 +148,9 @@ private fun HelpCard(block: HelpBlock) {
                 modifier = Modifier
                     .size(36.dp)
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primaryContainer)
+                    .background(MaterialTheme.colorScheme.primary)
                     .padding(8.dp),
-                tint = MaterialTheme.colorScheme.primary,
+                tint = MaterialTheme.colorScheme.onPrimary,
             )
             Spacer(Modifier.width(12.dp))
             Text(block.title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)

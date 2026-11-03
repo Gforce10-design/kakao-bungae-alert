@@ -144,14 +144,14 @@ private fun BungaeBottomBar(selected: String, onTab: (String) -> Unit) {
                     Box(
                         Modifier
                             .clip(RoundedCornerShape(999.dp))
-                            .background(if (active) MaterialTheme.colorScheme.primaryContainer else Color.Transparent)
+                            .background(if (active) MaterialTheme.colorScheme.primary else Color.Transparent)
                             .padding(horizontal = 16.dp, vertical = 4.dp),
                     ) {
                         Icon(
                             tab.icon,
                             contentDescription = null,
                             modifier = Modifier.size(22.dp),
-                            tint = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            tint = if (active) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                     Spacer(Modifier.height(2.dp))

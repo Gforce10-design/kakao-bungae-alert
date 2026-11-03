@@ -5,14 +5,19 @@
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:windowLightNavigationBar">true</item>
-        <item name="android:windowBackground">#FFF6F3EE</item>
+        <item name="android:colorPrimary">#FF0B57D0</item>
+        <item name="android:colorPrimaryDark">#FF0842A0</item>
+        <item name="android:colorAccent">#FF0B57D0</item>
+        <item name="android:windowBackground">#FFF2F4F6</item>
         <item name="android:forceDarkAllowed">false</item>
         <item name="android:enforceStatusBarContrast">false</item>
         <item name="android:enforceNavigationBarContrast">false</item>
     </style>
 
     <style name="Theme.Bungae.Alarm" parent="android:Theme.Material.NoActionBar">
-        <item name="android:windowBackground">#FFB42318</item>
+        <item name="android:colorPrimary">#FFC4161E</item>
+        <item name="android:colorAccent">#FFC4161E</item>
+        <item name="android:windowBackground">#FFC4161E</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">false</item>

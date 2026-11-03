@@ -25,6 +25,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -186,14 +187,14 @@ private fun RuleRow(rule: WatchRule, onToggle: (Boolean) -> Unit, onEdit: () -> 
                 Modifier
                     .size(40.dp)
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primaryContainer)
+                    .background(MaterialTheme.colorScheme.primary)
                     .clickable(role = Role.Button, onClick = onEdit),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
                     rule.pattern.trim().firstOrNull()?.toString() ?: "·",
                     style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary,
+                    color = MaterialTheme.colorScheme.onPrimary,
                 )
             }
             Column(
@@ -328,7 +329,10 @@ fun RuleEditor(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { confirmDelete = false }) { Text("취소") }
+                TextButton(
+                    onClick = { confirmDelete = false },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
+                ) { Text("취소") }
             },
         )
     }
