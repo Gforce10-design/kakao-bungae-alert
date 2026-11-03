@@ -1,0 +1,68 @@
+name: Release APK
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check stable debug keystore
+        run: |
+          set -euo pipefail
+          test -f debug.keystore
+          keytool -list -keystore debug.keystore -storepass android -alias androiddebugkey
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install Android SDK
+        run: |
+          set -euo pipefail
+          SDK="$RUNNER_TEMP/android-sdk"
+          mkdir -p "$SDK/cmdline-tools"
+          curl -fL --retry 3 -o /tmp/cmdtools.zip https://dl.google.com/android/repository/commandlinetools-linux-13114758_latest.zip
+          rm -rf /tmp/cmdline-extract
+          unzip -q /tmp/cmdtools.zip -d /tmp/cmdline-extract
+          mkdir -p "$SDK/cmdline-tools/latest"
+          if [ -d /tmp/cmdline-extract/cmdline-tools ]; then
+            cp -a /tmp/cmdline-extract/cmdline-tools/. "$SDK/cmdline-tools/latest/"
+          else
+            cp -a /tmp/cmdline-extract/. "$SDK/cmdline-tools/latest/"
+          fi
+          yes | "$SDK/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$SDK" --licenses >/tmp/sdk-licenses.log || true
+          "$SDK/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$SDK" \
+            "platforms;android-37.2" \
+            "build-tools;36.0.0" \
+            "platform-tools"
+          echo "ANDROID_HOME=$SDK" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$SDK" >> "$GITHUB_ENV"
+
+      - name: Build signed debug APK
+        run: ./gradlew assembleDebug --stacktrace
+
+      - name: Attach APK to the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME}"
+          src="$(echo app/build/outputs/apk/debug/*.apk)"
+          test -f "$src"
+          asset="bungae-alert-${tag}.apk"
+          cp "$src" "$asset"
+          notes="번개알림 ${tag}. 첨부 APK를 받아 직접 설치합니다. 자동 설치는 하지 않습니다."
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" "$asset" --clobber
+          else
+            gh release create "$tag" "$asset" --title "$tag" --notes "$notes"
+          fi

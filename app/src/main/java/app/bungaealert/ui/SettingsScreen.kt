@@ -44,6 +44,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import app.bungaealert.BuildConfig
 import app.bungaealert.BungaeApp
 import app.bungaealert.ai.NtfySubscribeService
 import app.bungaealert.auth.ClaudeSubscription
@@ -57,7 +58,10 @@ import app.bungaealert.detect.GrokRoutinePrompt
 import app.bungaealert.detect.Sensitivity
 import app.bungaealert.detect.TopicGenerator
 import app.bungaealert.notify.ListenerRuntime
+import app.bungaealert.update.UpdateChecks
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 enum class SettingsTab(val label: String) { Alarm("알림"), Judges("판정"), Connection("연결"), Notices("고지") }
 
@@ -98,6 +102,9 @@ data class SettingsModel(
     val grokTimeout: Int,
     val connection: ConnectionModel,
     val samsung: Boolean,
+    val appVersion: String = "",
+    val updateMessage: String = "",
+    val updateBusy: Boolean = false,
 )
 
 data class SettingsActions(
@@ -145,6 +152,7 @@ data class SettingsActions(
     val onSamsung: (Int) -> Unit = {},
     val onOpenOss: () -> Unit = {},
     val onOpenHelp: () -> Unit = {},
+    val onCheckUpdate: () -> Unit = {},
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -173,6 +181,8 @@ fun SettingsRoute(
     var device by remember { mutableStateOf<CopilotDeviceFlow.DeviceAuthorization?>(null) }
     var status by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
+    var updateMessage by remember { mutableStateOf("") }
+    var updateBusy by remember { mutableStateOf(false) }
     val access = remember(tick) { Permissions.listenerEnabled(context) }
     val bound = remember(tick) { ListenerRuntime.bound }
     val samsung = remember(tick) { Permissions.isSamsung() }
@@ -211,6 +221,9 @@ fun SettingsRoute(
             keepAlive = settings.listenerKeepAlive,
         ),
         samsung = samsung,
+        appVersion = BuildConfig.VERSION_NAME,
+        updateMessage = updateMessage,
+        updateBusy = updateBusy,
     )
     SettingsScreen(
         model = model,
@@ -340,6 +353,16 @@ fun SettingsRoute(
             },
             onOpenOss = onOpenOss,
             onOpenHelp = onOpenHelp,
+            onCheckUpdate = {
+                if (!updateBusy) {
+                    updateBusy = true
+                    scope.launch {
+                        val result = withContext(Dispatchers.IO) { UpdateChecks.run(context) }
+                        updateMessage = result.message
+                        updateBusy = false
+                    }
+                }
+            },
         ),
     )
     if (risk) {
@@ -622,6 +645,26 @@ private fun NoticesTab(model: SettingsModel, actions: SettingsActions) {
     SectionLabel("오픈소스")
     SurfaceCard(contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 4.dp)) {
         CheckLine("GPL-3.0 · OpenMinis · Pretendard", onClick = actions.onOpenOss)
+    }
+    Spacer(Modifier.height(16.dp))
+    SectionLabel("앱")
+    SurfaceCard {
+        SettingValue("버전", if (model.appVersion.isBlank()) "—" else "v${model.appVersion.removePrefix("v").removePrefix("V")}")
+        if (model.updateMessage.isNotBlank()) {
+            Spacer(Modifier.height(8.dp))
+            Text(
+                model.updateMessage,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Spacer(Modifier.height(12.dp))
+        SecondaryButton(
+            text = if (model.updateBusy) "확인 중" else "업데이트 확인",
+            onClick = actions.onCheckUpdate,
+            modifier = Modifier.fillMaxWidth(),
+            enabled = !model.updateBusy,
+        )
     }
 }
 
