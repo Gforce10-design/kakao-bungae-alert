@@ -26,6 +26,36 @@ fun oauthString(key: String): String {
     return "\"$escaped\""
 }
 
+fun envOrProp(key: String): String? {
+    val fromEnv = System.getenv(key)?.trim()?.takeIf { it.isNotEmpty() }
+    if (fromEnv != null) return fromEnv
+    return (findProperty(key) as String?)?.trim()?.takeIf { it.isNotEmpty() }
+}
+
+fun buildConfigString(raw: String): String {
+    val escaped = raw
+        .replace("\\", "\\\\")
+        .replace("\"", "\\\"")
+        .replace("\n", "")
+        .replace("\r", "")
+    return "\"$escaped\""
+}
+
+val releaseStoreFile = envOrProp("BUNGAE_STORE_FILE")
+val releaseStorePassword = envOrProp("BUNGAE_KEYSTORE_PASSWORD")
+val releaseKeyAlias = envOrProp("BUNGAE_KEY_ALIAS")
+val releaseKeyPassword = envOrProp("BUNGAE_KEY_PASSWORD")
+val hasReleaseSigning = !releaseStoreFile.isNullOrBlank() &&
+    !releaseStorePassword.isNullOrBlank() &&
+    !releaseKeyAlias.isNullOrBlank() &&
+    !releaseKeyPassword.isNullOrBlank()
+
+val bungaeVersionCode = envOrProp("BUNGAE_VERSION_CODE")?.toIntOrNull() ?: 1
+val bungaeVersionName = envOrProp("BUNGAE_VERSION_NAME") ?: "1.0.0"
+val bungaeGitSha = envOrProp("BUNGAE_GIT_SHA") ?: "dev"
+val bungaeUpdateRepo = envOrProp("BUNGAE_UPDATE_REPO") ?: "Gforce10-design/kakao-bungae-alert"
+val bungaeUpdateUrl = envOrProp("BUNGAE_UPDATE_URL") ?: ""
+
 android {
     namespace = "app.bungaealert"
     compileSdk {
@@ -38,13 +68,16 @@ android {
         applicationId = "app.bungaealert"
         minSdk = 26
         targetSdk = 37
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = bungaeVersionCode
+        versionName = bungaeVersionName
         buildConfigField(
             "String",
             "ANTHROPIC_OAUTH_IDENTIFIER_PROMPT",
             oauthString("ANTHROPIC_OAUTH_IDENTIFIER_PROMPT"),
         )
+        buildConfigField("String", "GIT_SHA", buildConfigString(bungaeGitSha))
+        buildConfigField("String", "UPDATE_REPO", buildConfigString(bungaeUpdateRepo))
+        buildConfigField("String", "UPDATE_RELEASES_URL", buildConfigString(bungaeUpdateUrl))
     }
 
     signingConfigs {
@@ -54,11 +87,24 @@ android {
             keyAlias = "androiddebugkey"
             keyPassword = "android"
         }
+        if (hasReleaseSigning) {
+            create("release") {
+                storeFile = rootProject.file(releaseStoreFile!!)
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+            }
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
+            signingConfig = if (hasReleaseSigning) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",

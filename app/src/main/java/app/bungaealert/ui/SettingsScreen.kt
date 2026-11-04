@@ -58,7 +58,9 @@ import app.bungaealert.detect.GrokRoutinePrompt
 import app.bungaealert.detect.Sensitivity
 import app.bungaealert.detect.TopicGenerator
 import app.bungaealert.notify.ListenerRuntime
+import app.bungaealert.update.SemanticVersion
 import app.bungaealert.update.UpdateChecks
+import app.bungaealert.update.UpdateDecision
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -103,8 +105,10 @@ data class SettingsModel(
     val connection: ConnectionModel,
     val samsung: Boolean,
     val appVersion: String = "",
+    val versionCode: Int = 0,
     val updateMessage: String = "",
     val updateBusy: Boolean = false,
+    val updateUrl: String = "",
 )
 
 data class SettingsActions(
@@ -153,6 +157,7 @@ data class SettingsActions(
     val onOpenOss: () -> Unit = {},
     val onOpenHelp: () -> Unit = {},
     val onCheckUpdate: () -> Unit = {},
+    val onOpenUpdate: () -> Unit = {},
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -181,8 +186,18 @@ fun SettingsRoute(
     var device by remember { mutableStateOf<CopilotDeviceFlow.DeviceAuthorization?>(null) }
     var status by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
-    var updateMessage by remember { mutableStateOf("") }
+    val savedUpdate = remember { UpdateChecks.savedUpdate(context) }
+    var updateMessage by remember {
+        mutableStateOf(
+            if (savedUpdate == null) {
+                ""
+            } else {
+                "새 버전 ${SemanticVersion.display(savedUpdate.tag)} (${savedUpdate.versionCode})가 있습니다"
+            },
+        )
+    }
     var updateBusy by remember { mutableStateOf(false) }
+    var updateUrl by remember { mutableStateOf(savedUpdate?.url.orEmpty()) }
     val access = remember(tick) { Permissions.listenerEnabled(context) }
     val bound = remember(tick) { ListenerRuntime.bound }
     val samsung = remember(tick) { Permissions.isSamsung() }
@@ -222,8 +237,10 @@ fun SettingsRoute(
         ),
         samsung = samsung,
         appVersion = BuildConfig.VERSION_NAME,
+        versionCode = BuildConfig.VERSION_CODE,
         updateMessage = updateMessage,
         updateBusy = updateBusy,
+        updateUrl = updateUrl,
     )
     SettingsScreen(
         model = model,
@@ -359,7 +376,23 @@ fun SettingsRoute(
                     scope.launch {
                         val result = withContext(Dispatchers.IO) { UpdateChecks.run(context) }
                         updateMessage = result.message
+                        if (result is UpdateDecision.Current) {
+                            updateUrl = ""
+                        } else if (!result.pageUrl.isNullOrBlank()) {
+                            updateUrl = result.pageUrl.orEmpty()
+                        }
                         updateBusy = false
+                    }
+                }
+            },
+            onOpenUpdate = {
+                val url = updateUrl
+                if (url.startsWith("https://")) {
+                    val opened = context.tryStart(
+                        android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url)),
+                    )
+                    if (!opened) {
+                        android.widget.Toast.makeText(context, "릴리스 페이지를 열지 못했습니다", android.widget.Toast.LENGTH_LONG).show()
                     }
                 }
             },
@@ -416,6 +449,10 @@ fun SettingsScreen(
     Column(modifier.fillMaxSize()) {
         Column(Modifier.padding(horizontal = 20.dp).padding(top = 12.dp)) {
             ScreenTitle("설정")
+            if (model.updateUrl.isNotBlank()) {
+                Spacer(Modifier.height(12.dp))
+                UpdateBanner(model, actions)
+            }
             Spacer(Modifier.height(12.dp))
             ChipRow(
                 labels = SettingsTab.entries.map { it.label },
@@ -626,6 +663,10 @@ private fun ConnectionTab(model: SettingsModel, actions: SettingsActions) {
 
 @Composable
 private fun NoticesTab(model: SettingsModel, actions: SettingsActions) {
+    if (model.updateUrl.isBlank()) {
+        UpdateBanner(model, actions)
+        Spacer(Modifier.height(16.dp))
+    }
     SectionLabel("사용법")
     SurfaceCard(contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 4.dp)) {
         CheckLine("사용법", onClick = actions.onOpenHelp)
@@ -646,10 +687,14 @@ private fun NoticesTab(model: SettingsModel, actions: SettingsActions) {
     SurfaceCard(contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 4.dp)) {
         CheckLine("GPL-3.0 · OpenMinis · Pretendard", onClick = actions.onOpenOss)
     }
-    Spacer(Modifier.height(16.dp))
-    SectionLabel("앱")
+}
+
+@Composable
+private fun UpdateBanner(model: SettingsModel, actions: SettingsActions) {
     SurfaceCard {
-        SettingValue("버전", if (model.appVersion.isBlank()) "—" else "v${model.appVersion.removePrefix("v").removePrefix("V")}")
+        Text("업데이트", style = MaterialTheme.typography.titleMedium)
+        Spacer(Modifier.height(8.dp))
+        SettingValue("현재 버전", versionLabel(model.appVersion, model.versionCode))
         if (model.updateMessage.isNotBlank()) {
             Spacer(Modifier.height(8.dp))
             Text(
@@ -665,7 +710,21 @@ private fun NoticesTab(model: SettingsModel, actions: SettingsActions) {
             modifier = Modifier.fillMaxWidth(),
             enabled = !model.updateBusy,
         )
+        if (model.updateUrl.isNotBlank()) {
+            Spacer(Modifier.height(8.dp))
+            PrimaryButton("받으러 가기", actions.onOpenUpdate, Modifier.fillMaxWidth())
+        }
     }
+}
+
+private fun versionLabel(name: String, code: Int): String {
+    val trimmed = name.trim()
+    val pretty = when {
+        trimmed.isEmpty() -> "—"
+        trimmed[0] == 'v' || trimmed[0] == 'V' -> trimmed
+        else -> "v$trimmed"
+    }
+    return if (code > 0) "$pretty ($code)" else pretty
 }
 
 @Composable

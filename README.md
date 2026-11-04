@@ -4,7 +4,7 @@
 
 라이선스는 [GNU GPL 3.0](LICENSE)입니다. 구독 계정 로그인은 [OpenMinis](https://github.com/OpenMinis/OpenMinis) (GPL-3.0)의 인증 코드를 가져와 고쳤습니다. 앱 안 **설정 → 오픈소스 고지**에도 같은 내용을 적었습니다. OpenMinis는 이 앱의 공식 배포가 아닙니다.
 
-광고와 분석 도구는 없습니다. 네트워크는 설정에서 켠 보조 판정(API 키, 구독 로그인, Grok 웹훅, ntfy 응답)에만 사용합니다. 앱에 미리 넣어 둔 웹훅이나 ntfy 토픽은 없습니다.
+광고와 분석 도구는 없습니다. 네트워크는 설정에서 켠 보조 판정(API 키, 구독 로그인, Grok 웹훅, ntfy 응답)과 GitHub 릴리스 확인에만 사용합니다. 앱에 미리 넣어 둔 웹훅이나 ntfy 토픽은 없습니다.
 
 **앱을 받은 분은 [사용설명서](docs/사용설명서.md)부터 보세요.** 설치, 첫 허용, 규칙, 알람, 알림이 안 올 때를 쉬운 말로 적었습니다.
 
@@ -22,7 +22,7 @@
 
 ## 디버그 APK 받아 설치하기
 
-스토어에는 올리지 않습니다. GitHub Actions가 푸시와 풀 리퀘스트마다 디버그 APK를 만들고, 그 실행의 **Artifacts**에 `bungae-debug-apk`로 올립니다. `v*` 태그를 푸시하면 Release APK 워크플로가 같은 키로 서명한 APK를 그 GitHub Release에 첨부합니다. 앱은 새 릴리스가 있으면 알림을 띄우고, 알림을 누르면 그 페이지가 열립니다. 설치는 받은 APK를 직접 실행하는 방식입니다.
+스토어에는 올리지 않습니다. GitHub Actions가 푸시와 풀 리퀘스트마다 디버그 APK를 만들고, 그 실행의 **Artifacts**에 `bungae-debug-apk`로 올립니다. 릴리스 APK는 [릴리스 만들기](#릴리스-만들기)를 따릅니다. 앱은 새 릴리스의 `versionCode`가 더 크면 **업데이트** 채널로 알리고, 알림을 누르면 그 릴리스 페이지가 열립니다. 설치는 받은 APK를 직접 실행하는 방식입니다.
 
 1. 저장소의 **Actions** 탭에서 가장 최근 `Debug APK` 실행을 엽니다.
 2. 실행이 성공하면 아래 Artifacts에서 `bungae-debug-apk`를 받아 압축을 풉니다. `app-debug.apk`가 들어 있습니다.
@@ -49,6 +49,45 @@
 APK는 `app/build/outputs/apk/debug/app-debug.apk`입니다.
 
 Claude 구독 로그인을 쓰려면 `app/provider-customization.properties.example`을 `app/provider-customization.properties`로 복사하고, 필요하면 `ANTHROPIC_OAUTH_IDENTIFIER_PROMPT`를 맞춥니다. API 키 방식은 이 값이 필요 없습니다.
+
+## 릴리스 만들기
+
+`.github/workflows/release.yml`이 서명된 릴리스 APK를 만들고 GitHub Release에 올립니다. 동작은 두 가지입니다.
+
+- `v*` 태그를 푸시합니다. 예: `git tag v1.2.3 && git push origin v1.2.3`
+- Actions 탭에서 **Release**를 수동 실행하고, `tag`에 `v1.2.3`처럼 넣습니다. 태그 푸시가 아니면 이 값이 있어야 합니다.
+
+`versionName`은 태그에서 앞의 `v`를 뺀 값입니다. `versionCode`는 그 워크플로의 `github.run_number`입니다. 커밋 SHA는 `BuildConfig.GIT_SHA`에 들어갑니다. 릴리스 본문에는 `versionCode: N`이 있고, APK 파일 이름은 `bungae-alert-v1.2.3-vcN.apk`입니다. 앱은 본문의 번호를 먼저 읽고, 없으면 파일 이름의 `vcN`을 읽습니다.
+
+워크플로는 APK와 `SHA256SUMS`를 아티팩트 `bungae-release-apk`로 올린 다음, `gh release --repo "$GITHUB_REPOSITORY"`로 그 태그의 GitHub Release에 첨부합니다. 같은 태그가 이미 있으면 이전 `bungae-alert-*.apk`와 `SHA256SUMS`를 지우고 다시 올립니다.
+
+디버그 APK의 `versionCode`는 1입니다. 이 워크플로의 첫 실행도 `run_number`가 1이면 번호가 같아서 앱은 업데이트를 알리지 않습니다. 한 번 더 실행하면 번호가 올라갑니다.
+
+### 서명 시크릿
+
+릴리스 키를 쓰려면 저장소 Actions 시크릿 네 개가 모두 있어야 합니다. 하나라도 없으면 저장소의 `debug.keystore`(비밀번호 `android`, 별칭 `androiddebugkey`)로 서명합니다. 그 키로 깔린 디버그 빌드는 그 APK로 덮어쓸 수 있습니다.
+
+| 시크릿 | 내용 |
+| --- | --- |
+| `BUNGAE_KEYSTORE_BASE64` | 키스토어 파일을 한 줄 base64로 인코딩한 값 |
+| `BUNGAE_KEYSTORE_PASSWORD` | 키스토어 비밀번호 |
+| `BUNGAE_KEY_ALIAS` | 키 별칭 |
+| `BUNGAE_KEY_PASSWORD` | 키 비밀번호 |
+
+지금 폰에 깔린 빌드의 인증서 SHA-256은 `7b49d0522171aadc5dfcba49955763f396948923b30fab459c5966d6482e796d`입니다. 저장소에 커밋된 `debug.keystore`의 SHA-256은 `bdae79bf52c4fec75b9c4b3164b76ad408966b7377569b34358191e0a190c8ca`라서 **같지 않습니다.** 시크릿 없이 만든 릴리스 APK는 그 폰 설치본 위에 올라가지 않습니다. 같은 인증서의 키스토어를 시크릿으로 넣어야 합니다. 보통은 그 빌드를 만든 컴퓨터의 `~/.android/debug.keystore`(별칭 `androiddebugkey`, 비밀번호 `android`)입니다. 아래 명령으로 SHA-256이 같은지 확인한 다음 등록합니다.
+
+```bash
+keytool -list -v -keystore /path/to/matching.keystore -alias YOUR_ALIAS
+# SHA256이 7B:49:D0:52:21:71:AA:DC:5D:FC:BA:49:95:57:63:F3:96:94:89:23:B3:0F:AB:45:9C:59:66:D6:48:2E:79:6D 인지 확인
+
+base64 -w 0 /path/to/matching.keystore
+```
+
+나온 한 줄을 `BUNGAE_KEYSTORE_BASE64`로, 비밀번호와 별칭을 나머지 시크릿으로 저장소 Settings → Secrets and variables → Actions에 넣습니다. 워크플로 로그에 찍힌 SHA-256이 위 값과 같아야 그 폰에 덮어쓸 수 있습니다.
+
+릴리스를 찾는 주소는 기본적으로 `https://api.github.com/repos/Gforce10-design/kakao-bungae-alert/releases/latest`입니다. 저장소가 비공개면 인증 없는 요청은 404나 401이 되고, 앱은 죽지 않고 로그만 남깁니다. 빌드할 때 `BUNGAE_UPDATE_REPO`(예: `owner/name`)나 `BUNGAE_UPDATE_URL`(https 전체 주소)로 바꿀 수 있습니다.
+
+앱은 24시간마다, 그리고 앱을 열 때 마지막 확인 후 6시간이 지났으면 한 번 더 확인합니다. 같은 `versionCode`는 알림을 한 번만 보냅니다. 알림 권한이 없으면 알림은 보내지 않고, 설정 → 고지에 현재 버전과 **업데이트 확인**이 있습니다. 새 버전이 있으면 설정 위에도 배너가 나옵니다.
 
 ## 알아 둘 점
 

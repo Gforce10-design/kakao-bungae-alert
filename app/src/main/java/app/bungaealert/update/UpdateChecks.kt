@@ -9,6 +9,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.work.Constraints
@@ -23,6 +24,8 @@ import androidx.work.WorkerParameters
 import app.bungaealert.BuildConfig
 import app.bungaealert.R
 import java.util.concurrent.TimeUnit
+
+data class AvailableUpdate(val versionCode: Int, val tag: String, val url: String)
 
 object UpdateNotifications {
     const val CHANNEL_ID = "app_update"
@@ -45,7 +48,8 @@ object UpdateNotifications {
         return true
     }
 
-    fun post(context: Context, tag: String, htmlUrl: String) {
+    fun post(context: Context, tag: String, versionCode: Int, htmlUrl: String) {
+        if (!htmlUrl.startsWith("https://")) return
         val manager = context.getSystemService(NotificationManager::class.java) ?: return
         if (Build.VERSION.SDK_INT >= 26 && manager.getNotificationChannel(CHANNEL_ID) == null) {
             manager.createNotificationChannel(
@@ -58,8 +62,8 @@ object UpdateNotifications {
                 },
             )
         }
-        val display = SemanticVersion.display(tag)
-        val text = context.getString(R.string.update_notification_text, display)
+        val label = "${SemanticVersion.display(tag)} ($versionCode)"
+        val text = context.getString(R.string.update_notification_text, label)
         val view = Intent(Intent.ACTION_VIEW, Uri.parse(htmlUrl)).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK
         }
@@ -84,38 +88,129 @@ object UpdateNotifications {
 
 internal object UpdatePrefs {
     private const val FILE = "bungae_update"
-    private const val KEY = "notified_version"
+    private const val KEY_NOTIFIED = "notified_version_code"
+    private const val KEY_CHECKED = "last_check_at"
+    private const val KEY_AVAILABLE_CODE = "available_version_code"
+    private const val KEY_AVAILABLE_TAG = "available_tag"
+    private const val KEY_AVAILABLE_URL = "available_url"
 
-    fun notified(context: Context): String? =
-        context.getSharedPreferences(FILE, Context.MODE_PRIVATE).getString(KEY, null)?.takeIf { it.isNotBlank() }
+    private fun prefs(context: Context) =
+        context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
 
-    fun save(context: Context, normalized: String) {
-        context.getSharedPreferences(FILE, Context.MODE_PRIVATE).edit().putString(KEY, normalized).apply()
+    fun notified(context: Context): Int? {
+        val stored = prefs(context)
+        if (!stored.contains(KEY_NOTIFIED)) return null
+        return try {
+            stored.getInt(KEY_NOTIFIED, -1).takeIf { it > 0 }
+        } catch (_: ClassCastException) {
+            null
+        }
+    }
+
+    fun saveNotified(context: Context, versionCode: Int) {
+        prefs(context).edit().putInt(KEY_NOTIFIED, versionCode).apply()
+    }
+
+    fun lastCheckAt(context: Context): Long =
+        try {
+            prefs(context).getLong(KEY_CHECKED, 0L)
+        } catch (_: ClassCastException) {
+            0L
+        }
+
+    fun saveLastCheck(context: Context, atMillis: Long = System.currentTimeMillis()) {
+        prefs(context).edit().putLong(KEY_CHECKED, atMillis).apply()
+    }
+
+    fun available(context: Context): AvailableUpdate? {
+        val stored = prefs(context)
+        val code = try {
+            stored.getInt(KEY_AVAILABLE_CODE, -1)
+        } catch (_: ClassCastException) {
+            return null
+        }
+        val tag = stored.getString(KEY_AVAILABLE_TAG, null).orEmpty()
+        val url = stored.getString(KEY_AVAILABLE_URL, null).orEmpty()
+        if (code <= 0 || !url.startsWith("https://")) return null
+        return AvailableUpdate(code, tag, url)
+    }
+
+    fun saveAvailable(context: Context, versionCode: Int, tag: String, url: String) {
+        if (versionCode <= 0 || !url.startsWith("https://")) return
+        prefs(context).edit()
+            .putInt(KEY_AVAILABLE_CODE, versionCode)
+            .putString(KEY_AVAILABLE_TAG, tag)
+            .putString(KEY_AVAILABLE_URL, url)
+            .apply()
+    }
+
+    fun clearAvailable(context: Context) {
+        prefs(context).edit()
+            .remove(KEY_AVAILABLE_CODE)
+            .remove(KEY_AVAILABLE_TAG)
+            .remove(KEY_AVAILABLE_URL)
+            .apply()
     }
 }
 
 object UpdateChecks {
+    private const val TAG = "BungaeUpdate"
+
+    fun savedUpdate(
+        context: Context,
+        installedVersionCode: Int = BuildConfig.VERSION_CODE,
+    ): AvailableUpdate? {
+        val saved = UpdatePrefs.available(context) ?: return null
+        return saved.takeIf { VersionCodes.isNewer(it.versionCode, installedVersionCode) }
+    }
+
     fun run(
         context: Context,
         source: ReleaseSource = GithubReleaseSource(),
-        installedVersion: String = BuildConfig.VERSION_NAME,
+        installedVersionCode: Int = BuildConfig.VERSION_CODE,
+        nowMillis: Long = System.currentTimeMillis(),
     ): UpdateDecision {
-        val query = try {
-            source.latest()
+        return try {
+            UpdatePrefs.saveLastCheck(context, nowMillis)
+            val query = try {
+                source.latest()
+            } catch (t: Throwable) {
+                ReleaseQuery.Failed(t.message ?: t.javaClass.simpleName)
+            }
+            when (query) {
+                ReleaseQuery.NotFound -> Log.i(TAG, "GitHub latest release returned 404; not notifying")
+                ReleaseQuery.Unauthorized -> Log.i(TAG, "GitHub latest release returned 401; not notifying")
+                is ReleaseQuery.Failed -> Log.i(TAG, "GitHub latest release failed: ${query.detail}")
+                else -> Unit
+            }
+            val decision = UpdatePolicy.decide(
+                query = query,
+                installedVersionCode = installedVersionCode,
+                notifiedVersionCode = UpdatePrefs.notified(context),
+                canNotify = UpdateNotifications.canPost(context),
+            )
+            apply(context, decision)
+            decision
         } catch (t: Throwable) {
-            ReleaseQuery.Failed(t.message ?: t.javaClass.simpleName)
+            Log.w(TAG, "update check failed", t)
+            UpdateDecision.Unavailable("업데이트를 확인하지 못했습니다")
         }
-        val decision = UpdatePolicy.decide(
-            query = query,
-            installedVersion = installedVersion,
-            notifiedNormalized = UpdatePrefs.notified(context),
-            canNotify = UpdateNotifications.canPost(context),
-        )
-        if (decision is UpdateDecision.Notify) {
-            UpdateNotifications.post(context, decision.tag, decision.htmlUrl)
-            UpdatePrefs.save(context, decision.normalized)
+    }
+
+    private fun apply(context: Context, decision: UpdateDecision) {
+        when (decision) {
+            is UpdateDecision.Notify -> {
+                UpdateNotifications.post(context, decision.tag, decision.versionCode, decision.htmlUrl)
+                UpdatePrefs.saveNotified(context, decision.versionCode)
+                UpdatePrefs.saveAvailable(context, decision.versionCode, decision.tag, decision.htmlUrl)
+            }
+            is UpdateDecision.AlreadySent ->
+                UpdatePrefs.saveAvailable(context, decision.versionCode, decision.tag, decision.htmlUrl)
+            is UpdateDecision.NeedsPermission ->
+                UpdatePrefs.saveAvailable(context, decision.versionCode, decision.tag, decision.htmlUrl)
+            is UpdateDecision.Current -> UpdatePrefs.clearAvailable(context)
+            is UpdateDecision.Unavailable -> Unit
         }
-        return decision
     }
 }
 
@@ -124,27 +219,34 @@ class UpdateCheckWorker(
     params: WorkerParameters,
 ) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
-        UpdateChecks.run(applicationContext)
-        return Result.success()
+        return try {
+            UpdateChecks.run(applicationContext)
+            Result.success()
+        } catch (t: Throwable) {
+            Log.w("BungaeUpdate", "update check worker failed", t)
+            Result.success()
+        }
     }
 
     companion object {
         private const val PERIODIC = "app-update-check"
         private const val ON_START = "app-update-check-now"
 
-        fun schedule(context: Context) {
+        fun schedule(context: Context, nowMillis: Long = System.currentTimeMillis()) {
             val constraints = Constraints.Builder()
                 .setRequiredNetworkType(NetworkType.CONNECTED)
                 .build()
-            val daily = PeriodicWorkRequestBuilder<UpdateCheckWorker>(1, TimeUnit.DAYS)
+            val daily = PeriodicWorkRequestBuilder<UpdateCheckWorker>(24, TimeUnit.HOURS)
                 .setConstraints(constraints)
                 .build()
             val manager = WorkManager.getInstance(context)
-            manager.enqueueUniquePeriodicWork(PERIODIC, ExistingPeriodicWorkPolicy.UPDATE, daily)
-            val now = OneTimeWorkRequestBuilder<UpdateCheckWorker>()
-                .setConstraints(constraints)
-                .build()
-            manager.enqueueUniqueWork(ON_START, ExistingWorkPolicy.KEEP, now)
+            manager.enqueueUniquePeriodicWork(PERIODIC, ExistingPeriodicWorkPolicy.KEEP, daily)
+            if (UpdateThrottle.due(UpdatePrefs.lastCheckAt(context), nowMillis)) {
+                val now = OneTimeWorkRequestBuilder<UpdateCheckWorker>()
+                    .setConstraints(constraints)
+                    .build()
+                manager.enqueueUniqueWork(ON_START, ExistingWorkPolicy.KEEP, now)
+            }
         }
     }
 }
