@@ -11,7 +11,7 @@
     <string name="channel_listener_desc">카카오톡 알림 감시를 유지하고 연결 상태를 보여 줍니다.</string>
     <string name="listener_status_title">카카오톡 알림 감시</string>
     <string name="listener_status_text">감시 중입니다. 연결 여부는 앱의 연결 화면에서 확인하세요.</string>
-    <string name="channel_update">앱 업데이트</string>
-    <string name="channel_update_desc">새 버전이 나왔을 때 알려 줍니다. 누르면 릴리스 페이지에서 APK를 받습니다.</string>
+    <string name="channel_update">업데이트</string>
+    <string name="channel_update_desc">새 버전이 나오면 알려 줍니다. 누르면 릴리스 페이지에서 APK를 받습니다.</string>
     <string name="update_notification_text">새 버전 %1$s가 있어요. 눌러서 APK를 받으세요.</string>
 </resources>
