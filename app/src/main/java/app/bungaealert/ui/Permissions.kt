@@ -28,15 +28,34 @@ object Permissions {
     fun isSamsung(): Boolean = Build.MANUFACTURER.equals("samsung", ignoreCase = true)
 
     fun listenerEnabled(context: Context): Boolean {
-        if (Build.VERSION.SDK_INT >= 27) {
-            val manager = context.getSystemService(NotificationManager::class.java) ?: return false
-            val component = ComponentName(context, KakaoNotificationListener::class.java)
-            return manager.isNotificationListenerAccessGranted(component)
+        val component = ComponentName(context, KakaoNotificationListener::class.java)
+        val listed = listenerListed(context, component)
+        if (Build.VERSION.SDK_INT < 27) return notificationListenerGranted(null, listed)
+        val manager = context.getSystemService(NotificationManager::class.java)
+        val granted = try {
+            manager?.isNotificationListenerAccessGranted(component)
+        } catch (_: RuntimeException) {
+            null
         }
-        val flat = Settings.Secure.getString(context.contentResolver, "enabled_notification_listeners")
-            ?: return false
-        val mine = ComponentName(context, KakaoNotificationListener::class.java).flattenToString()
-        return flat.split(":").any { it.equals(mine, ignoreCase = true) }
+        return notificationListenerGranted(granted, listed)
+    }
+
+    private fun listenerListed(context: Context, component: ComponentName): Boolean? {
+        val flat = try {
+            Settings.Secure.getString(context.contentResolver, "enabled_notification_listeners")
+        } catch (_: RuntimeException) {
+            return null
+        } ?: return false
+        if (flat.isBlank()) return false
+        val longName = component.flattenToString()
+        val shortName = component.flattenToShortString()
+        return flat.split(":").any { entry ->
+            val value = entry.trim()
+            value.equals(longName, ignoreCase = true) ||
+                value.equals(shortName, ignoreCase = true) ||
+                value.endsWith("/${component.className}", ignoreCase = true) ||
+                (component.shortClassName.isNotEmpty() && value.endsWith("/${component.shortClassName}", ignoreCase = true))
+        }
     }
 
     fun powerSnapshot(context: Context): PowerSnapshot {

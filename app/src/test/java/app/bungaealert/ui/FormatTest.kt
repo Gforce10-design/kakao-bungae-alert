@@ -6,6 +6,8 @@ import app.bungaealert.detect.MatchMode
 import app.bungaealert.detect.PostType
 import app.bungaealert.detect.WatchRule
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -38,6 +40,35 @@ class FormatTest {
             parseAlarmTitle("번개모임 · 경제적 자유를 위하여~"),
         )
         assertEquals(AlarmCopy("알림", "방만"), parseAlarmTitle("방만"))
+    }
+
+    @Test
+    fun homeStaysOffWatchingUntilListenerAndNotificationsAreGranted() {
+        assertEquals(
+            ListenerHealthUi.NeedsPermission,
+            homeListenerHealth(listenerGranted = false, notificationsGranted = false, listenerBound = true),
+        )
+        assertEquals(
+            ListenerHealthUi.NeedsPermission,
+            homeListenerHealth(listenerGranted = true, notificationsGranted = false, listenerBound = true),
+        )
+        assertEquals(
+            ListenerHealthUi.NeedsPermission,
+            homeListenerHealth(listenerGranted = false, notificationsGranted = true, listenerBound = true),
+        )
+        assertEquals(
+            ListenerHealthUi.Unbound,
+            homeListenerHealth(listenerGranted = true, notificationsGranted = true, listenerBound = false),
+        )
+        assertEquals(
+            ListenerHealthUi.Watching,
+            homeListenerHealth(listenerGranted = true, notificationsGranted = true, listenerBound = true),
+        )
+        assertFalse(notificationListenerGranted(managerGranted = true, listedInSettings = false))
+        assertTrue(notificationListenerGranted(managerGranted = true, listedInSettings = null))
+        assertTrue(notificationListenerGranted(managerGranted = false, listedInSettings = true))
+        assertFalse(notificationListenerGranted(managerGranted = false, listedInSettings = false))
+        assertFalse(notificationListenerGranted(managerGranted = null, listedInSettings = null))
     }
 
     @Test

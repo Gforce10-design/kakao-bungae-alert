@@ -11,6 +11,7 @@ import app.bungaealert.ai.NtfyWatchdogWorker
 import app.bungaealert.ai.ReplyHub
 import app.bungaealert.auth.AppVisibility
 import app.bungaealert.data.DetectionLogRepository
+import app.bungaealert.data.KeywordsRepository
 import app.bungaealert.data.RulesRepository
 import app.bungaealert.data.SecretStore
 import app.bungaealert.data.SettingsRepository
@@ -52,6 +53,7 @@ class AppGraph(private val app: Context) {
     val settings = SettingsRepository(app)
     val secrets = SecretStore(app)
     val rules = RulesRepository(app)
+    val keywords = KeywordsRepository(app)
     val log = DetectionLogRepository(app)
     val dedupe = DedupeWindow()
     val replies = ReplyHub()

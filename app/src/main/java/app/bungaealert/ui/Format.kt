@@ -2,14 +2,37 @@ package app.bungaealert.ui
 
 import app.bungaealert.data.DetectionRecord
 import app.bungaealert.detect.AlertMode
+import app.bungaealert.detect.MatchKeyword
 import app.bungaealert.detect.MatchMode
 import app.bungaealert.detect.PostType
+import app.bungaealert.detect.RuleKeywords
 import app.bungaealert.detect.ScoreZone
 import app.bungaealert.detect.WatchRule
 import java.time.Instant
 import java.time.ZoneId
 
-enum class ListenerHealthUi { Watching, Unbound, Blocked }
+enum class ListenerHealthUi { Watching, Unbound, Blocked, NeedsPermission }
+
+fun homeListenerHealth(
+    listenerGranted: Boolean,
+    notificationsGranted: Boolean,
+    listenerBound: Boolean,
+): ListenerHealthUi = when {
+    !listenerGranted || !notificationsGranted -> ListenerHealthUi.NeedsPermission
+    !listenerBound -> ListenerHealthUi.Unbound
+    else -> ListenerHealthUi.Watching
+}
+
+/**
+ * Notification-listener access for the home banner.
+ * A settings list that does not include this app wins over a manager API that
+ * still reports access, which is what kept the banner on 감시 중.
+ */
+fun notificationListenerGranted(managerGranted: Boolean?, listedInSettings: Boolean?): Boolean {
+    if (listedInSettings == false) return false
+    if (managerGranted == false && listedInSettings != true) return false
+    return managerGranted == true || listedInSettings == true
+}
 
 data class DetectionCardUi(
     val id: String,
@@ -78,11 +101,15 @@ fun alertLabel(mode: AlertMode): String = when (mode) {
     AlertMode.REPEAT -> "반복"
 }
 
-fun ruleMeta(rule: WatchRule): String {
-    val types = buildList {
-        if (rule.detectMeetup) add("번개")
-        if (rule.detectGiveaway) add("선착순")
-    }.joinToString(" · ")
+fun ruleMeta(rule: WatchRule, keywords: List<MatchKeyword> = emptyList()): String {
+    val types = if (keywords.isEmpty()) {
+        buildList {
+            if (rule.detectMeetup) add("번개")
+            if (rule.detectGiveaway) add("선착순")
+        }.joinToString(" · ")
+    } else {
+        RuleKeywords.applicable(rule, keywords).joinToString(" · ") { it.text }
+    }
     return listOf(matchLabel(rule.matchMode), alertLabel(rule.alertMode), types)
         .filter { it.isNotBlank() }
         .joinToString(" · ")

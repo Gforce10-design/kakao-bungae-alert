@@ -10,7 +10,9 @@ import app.bungaealert.detect.ChatMatcher
 import app.bungaealert.detect.DecisionPolicy
 import app.bungaealert.detect.KakaoNoticeParser
 import app.bungaealert.detect.KakaoPackages
+import app.bungaealert.detect.KeywordMatcher
 import app.bungaealert.detect.RawKakaoNotice
+import app.bungaealert.detect.RuleKeywords
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
@@ -48,16 +50,27 @@ object KakaoNoticePipeline {
 
     private suspend fun consume(notice: PostedNotice) {
         if (!KakaoPackages.shouldRead(notice.raw.packageName, notice.raw.importance)) return
-        val messages = KakaoNoticeParser.parse(notice.raw)
         val app = BungaeApp.instance
+        val keywords = app.graph.keywords.current()
+        val body = KeywordMatcher.notificationText(notice.raw)
         val rules = app.graph.rules.current().filter { it.enabled }
-        if (rules.isEmpty()) return
+        val interested = rules.filter { rule ->
+            KeywordMatcher.matchesAny(
+                RuleKeywords.applicable(rule, keywords),
+                notice.raw.title,
+                body,
+            )
+        }
+        if (interested.isEmpty()) return
+        val messages = KakaoNoticeParser.parse(notice.raw)
         for (message in messages) {
             if (message.text.isBlank()) continue
-            val matched = rules.filter { ChatMatcher.matches(it, message.chatName) }
+            val matched = interested.filter { ChatMatcher.matches(it, message.chatName) }
             if (matched.isEmpty()) continue
             if (!app.graph.dedupe.shouldProcess(message.chatName, message.text)) continue
-            val types = matched.flatMap { it.types }.toSet()
+            val types = matched.flatMap { rule ->
+                RuleKeywords.postTypes(RuleKeywords.applicable(rule, keywords))
+            }.toSet()
             if (types.isEmpty()) continue
             val mode = if (matched.any { it.alertMode == AlertMode.REPEAT }) AlertMode.REPEAT else AlertMode.ONCE
             val settings = app.graph.settings.current()

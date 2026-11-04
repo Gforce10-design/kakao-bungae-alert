@@ -305,7 +305,13 @@ fun DangerButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifie
 }
 
 @Composable
-fun BungaeChip(label: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun BungaeChip(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    maxLines: Int = 1,
+) {
     val background by animateColorAsState(
         if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
         tween(160),
@@ -340,7 +346,8 @@ fun BungaeChip(label: String, selected: Boolean, onClick: () -> Unit, modifier: 
                 style = MaterialTheme.typography.labelLarge,
                 color = foreground,
                 textAlign = TextAlign.Center,
-                maxLines = 1,
+                maxLines = maxLines,
+                overflow = if (maxLines == 1) TextOverflow.Clip else TextOverflow.Ellipsis,
             )
         }
     }
@@ -370,6 +377,15 @@ fun ListenerBanner(health: ListenerHealthUi, onClick: () -> Unit, modifier: Modi
     val muted: Color
     val bordered: Boolean
     when (health) {
+        ListenerHealthUi.NeedsPermission -> {
+            title = "권한 필요"
+            subtitle = "알림 접근과 알림 표시를 허용해 주세요"
+            icon = Icons.Rounded.NotificationsOff
+            background = extra.blocked
+            foreground = extra.onBlocked
+            muted = extra.onBlockedMuted
+            bordered = false
+        }
         ListenerHealthUi.Blocked -> {
             title = "알림을 받지 않는 중"
             subtitle = "알림 접근을 켜 주세요"
@@ -569,6 +585,7 @@ fun BungaeTextField(
     modifier: Modifier = Modifier,
     singleLine: Boolean = true,
     minLines: Int = 1,
+    maxLines: Int = if (singleLine) 1 else Int.MAX_VALUE,
     secret: Boolean = false,
 ) {
     var visible by remember { mutableStateOf(false) }
@@ -580,6 +597,7 @@ fun BungaeTextField(
         textStyle = MaterialTheme.typography.bodyLarge,
         singleLine = singleLine,
         minLines = minLines,
+        maxLines = maxLines,
         visualTransformation = if (secret && !visible && value.isNotEmpty()) PasswordVisualTransformation() else VisualTransformation.None,
         trailingIcon = if (secret) {
             {
