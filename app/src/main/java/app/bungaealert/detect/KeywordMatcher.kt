@@ -5,6 +5,76 @@ import org.json.JSONObject
 import java.util.Locale
 import java.util.UUID
 
+enum class KeywordKind { MEETUP, GIVEAWAY, CUSTOM }
+
+/**
+ * Which stored keywords a chat rule actually uses. The rule editor and the
+ * notification pipeline both call this, so a phrase added in 찾을 말 shows up
+ * as a choice and is what matching looks for.
+ */
+object RuleKeywords {
+    const val MEETUP_ID = "default-bungae"
+    const val GIVEAWAY_ID = "default-giveaway"
+
+    fun kind(keyword: MatchKeyword): KeywordKind {
+        val text = KeywordMatcher.normalize(keyword.text)
+        return when {
+            keyword.id == MEETUP_ID || text == "번개" || text == "번개모임" -> KeywordKind.MEETUP
+            keyword.id == GIVEAWAY_ID || text == "선착순" || text == "선착순 나눔" -> KeywordKind.GIVEAWAY
+            else -> KeywordKind.CUSTOM
+        }
+    }
+
+    fun applicable(rule: WatchRule, keywords: List<MatchKeyword>): List<MatchKeyword> =
+        keywords.filter { applies(rule, it) }
+
+    fun applies(rule: WatchRule, keyword: MatchKeyword): Boolean {
+        if (!keyword.enabled) return false
+        if (KeywordMatcher.canonicalize(keyword.text).isEmpty()) return false
+        if (rule.keywordsSpecified) return keyword.id in rule.keywordIds
+        val watchesSomething = rule.detectMeetup || rule.detectGiveaway
+        return when (kind(keyword)) {
+            KeywordKind.MEETUP -> rule.detectMeetup
+            KeywordKind.GIVEAWAY -> rule.detectGiveaway
+            KeywordKind.CUSTOM -> watchesSomething
+        }
+    }
+
+    fun withSelection(
+        rule: WatchRule,
+        pattern: String,
+        matchMode: MatchMode,
+        alertMode: AlertMode,
+        enabled: Boolean,
+        selected: List<MatchKeyword>,
+    ): WatchRule {
+        val types = postTypes(selected)
+        return rule.copy(
+            pattern = pattern,
+            matchMode = matchMode,
+            detectMeetup = PostType.MEETUP in types,
+            detectGiveaway = PostType.GIVEAWAY in types,
+            alertMode = alertMode,
+            enabled = enabled,
+            keywordIds = selected.map { it.id }.toSet(),
+            keywordsSpecified = true,
+        )
+    }
+
+    fun postTypes(keywords: List<MatchKeyword>): Set<PostType> = buildSet {
+        for (keyword in keywords) {
+            when (kind(keyword)) {
+                KeywordKind.MEETUP -> add(PostType.MEETUP)
+                KeywordKind.GIVEAWAY -> add(PostType.GIVEAWAY)
+                KeywordKind.CUSTOM -> {
+                    add(PostType.MEETUP)
+                    add(PostType.GIVEAWAY)
+                }
+            }
+        }
+    }
+}
+
 data class MatchKeyword(
     val id: String,
     val text: String,

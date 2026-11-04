@@ -45,6 +45,9 @@ data class WatchRule(
     val detectGiveaway: Boolean,
     val alertMode: AlertMode,
     val enabled: Boolean = true,
+    val keywordIds: Set<String> = emptySet(),
+    /** False for rules saved before keyword choices existed: they follow the live store. */
+    val keywordsSpecified: Boolean = false,
 ) {
     val types: Set<PostType>
         get() = buildSet {

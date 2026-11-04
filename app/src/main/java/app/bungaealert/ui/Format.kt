@@ -2,8 +2,10 @@ package app.bungaealert.ui
 
 import app.bungaealert.data.DetectionRecord
 import app.bungaealert.detect.AlertMode
+import app.bungaealert.detect.MatchKeyword
 import app.bungaealert.detect.MatchMode
 import app.bungaealert.detect.PostType
+import app.bungaealert.detect.RuleKeywords
 import app.bungaealert.detect.ScoreZone
 import app.bungaealert.detect.WatchRule
 import java.time.Instant
@@ -99,11 +101,15 @@ fun alertLabel(mode: AlertMode): String = when (mode) {
     AlertMode.REPEAT -> "반복"
 }
 
-fun ruleMeta(rule: WatchRule): String {
-    val types = buildList {
-        if (rule.detectMeetup) add("번개")
-        if (rule.detectGiveaway) add("선착순")
-    }.joinToString(" · ")
+fun ruleMeta(rule: WatchRule, keywords: List<MatchKeyword> = emptyList()): String {
+    val types = if (keywords.isEmpty()) {
+        buildList {
+            if (rule.detectMeetup) add("번개")
+            if (rule.detectGiveaway) add("선착순")
+        }.joinToString(" · ")
+    } else {
+        RuleKeywords.applicable(rule, keywords).joinToString(" · ") { it.text }
+    }
     return listOf(matchLabel(rule.matchMode), alertLabel(rule.alertMode), types)
         .filter { it.isNotBlank() }
         .joinToString(" · ")

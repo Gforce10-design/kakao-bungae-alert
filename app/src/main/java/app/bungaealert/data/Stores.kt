@@ -157,6 +157,8 @@ class RulesRepository(context: Context) {
                 put("detectGiveaway", rule.detectGiveaway)
                 put("alertMode", rule.alertMode.wire)
                 put("enabled", rule.enabled)
+                put("keywordIds", JSONArray(rule.keywordIds.toList()))
+                put("keywordsSpecified", rule.keywordsSpecified)
             })
         }
         file.writeText(array.toString())
@@ -179,6 +181,8 @@ class RulesRepository(context: Context) {
                             detectGiveaway = obj.optBoolean("detectGiveaway", true),
                             alertMode = AlertMode.fromWire(obj.optString("alertMode")),
                             enabled = obj.optBoolean("enabled", true),
+                            keywordIds = obj.optJSONArray("keywordIds").toStringList().toSet(),
+                            keywordsSpecified = obj.has("keywordsSpecified") && obj.optBoolean("keywordsSpecified"),
                         ),
                     )
                 }

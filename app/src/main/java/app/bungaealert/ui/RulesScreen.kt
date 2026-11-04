@@ -8,8 +8,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -48,9 +51,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.bungaealert.BungaeApp
 import app.bungaealert.detect.AlertMode
+import app.bungaealert.detect.KeywordCodec
 import app.bungaealert.detect.KeywordMatcher
 import app.bungaealert.detect.MatchKeyword
 import app.bungaealert.detect.MatchMode
+import app.bungaealert.detect.RuleKeywords
 import app.bungaealert.detect.WatchRule
 import java.util.UUID
 
@@ -76,6 +81,7 @@ fun RulesRoute() {
     var editingKeyword by remember { mutableStateOf<MatchKeyword?>(null) }
     var creatingKeyword by remember { mutableStateOf(false) }
     var keywordDraftId by rememberSaveable { mutableStateOf("") }
+    var ruleDraftId by rememberSaveable { mutableStateOf("") }
     RulesScreen(
         rules = rules,
         filter = filter,
@@ -91,6 +97,7 @@ fun RulesRoute() {
         onAdd = {
             creatingKeyword = false
             editingKeyword = null
+            ruleDraftId = UUID.randomUUID().toString()
             creating = true
         },
         keywords = keywords,
@@ -118,7 +125,7 @@ fun RulesRoute() {
     }
     val draft = when {
         keywordDraft != null -> null
-        creating -> WatchRule(UUID.randomUUID().toString(), "", MatchMode.ENDS_WITH, true, true, AlertMode.ONCE)
+        creating -> WatchRule(ruleDraftId, "", MatchMode.ENDS_WITH, true, true, AlertMode.ONCE)
         editing != null -> editing
         else -> null
     }
@@ -169,6 +176,7 @@ fun RulesRoute() {
             RuleEditor(
                 initial = draft,
                 isNew = creating,
+                keywords = keywords,
                 onDismiss = { creating = false; editing = null },
                 onDelete = if (creating) {
                     null
@@ -274,7 +282,7 @@ fun RulesScreen(
                     )
                 }
                 else -> items(shown, key = { it.id }) { rule ->
-                    RuleRow(rule, onToggle = { onToggle(rule.id, it) }, onEdit = { onEdit(rule) })
+                    RuleRow(rule, keywords, onToggle = { onToggle(rule.id, it) }, onEdit = { onEdit(rule) })
                 }
             }
         }
@@ -432,7 +440,12 @@ private fun KeywordEditor(
 }
 
 @Composable
-private fun RuleRow(rule: WatchRule, onToggle: (Boolean) -> Unit, onEdit: () -> Unit) {
+private fun RuleRow(
+    rule: WatchRule,
+    keywords: List<MatchKeyword>,
+    onToggle: (Boolean) -> Unit,
+    onEdit: () -> Unit,
+) {
     SurfaceCard(contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
@@ -464,7 +477,7 @@ private fun RuleRow(rule: WatchRule, onToggle: (Boolean) -> Unit, onEdit: () -> 
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    ruleMeta(rule),
+                    ruleMeta(rule, keywords),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
@@ -477,6 +490,7 @@ private fun RuleRow(rule: WatchRule, onToggle: (Boolean) -> Unit, onEdit: () -> 
 }
 
 @Composable
+@OptIn(ExperimentalLayoutApi::class)
 fun RuleEditor(
     initial: WatchRule,
     isNew: Boolean,
@@ -484,15 +498,20 @@ fun RuleEditor(
     onDelete: (() -> Unit)?,
     onSave: (WatchRule) -> Unit,
     modifier: Modifier = Modifier,
+    keywords: List<MatchKeyword> = KeywordCodec.defaults(),
 ) {
     var pattern by remember(initial.id) { mutableStateOf(initial.pattern) }
     var mode by remember(initial.id) { mutableStateOf(initial.matchMode) }
-    var meetup by remember(initial.id) { mutableStateOf(initial.detectMeetup) }
-    var giveaway by remember(initial.id) { mutableStateOf(initial.detectGiveaway) }
     var alert by remember(initial.id) { mutableStateOf(initial.alertMode) }
     var enabled by remember(initial.id) { mutableStateOf(initial.enabled) }
+    var toggles by remember(initial.id) { mutableStateOf<Map<String, Boolean>>(emptyMap()) }
     var confirmDelete by remember { mutableStateOf(false) }
-    val canSave = pattern.isNotBlank() && (meetup || giveaway)
+    val options = keywords.filter { keyword ->
+        keyword.enabled && KeywordMatcher.canonicalize(keyword.text).isNotEmpty()
+    }
+    fun chosen(keyword: MatchKeyword): Boolean = toggles[keyword.id] ?: RuleKeywords.applies(initial, keyword)
+    val selected = options.filter { chosen(it) }
+    val canSave = pattern.isNotBlank() && selected.isNotEmpty()
     Column(
         modifier
             .fillMaxWidth()
@@ -528,10 +547,29 @@ fun RuleEditor(
             onSelect = { mode = MatchMode.entries[it] },
         )
         Spacer(Modifier.height(16.dp))
-        SectionLabel("종류")
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            BungaeChip("번개", meetup, { meetup = !meetup })
-            BungaeChip("선착순", giveaway, { giveaway = !giveaway })
+        SectionLabel("찾을 말")
+        if (options.isEmpty()) {
+            Text(
+                "사용 중인 찾을 말이 없습니다",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        } else {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                options.forEach { keyword ->
+                    val on = chosen(keyword)
+                    BungaeChip(
+                        label = keyword.text,
+                        selected = on,
+                        onClick = { toggles = toggles + (keyword.id to !on) },
+                        modifier = Modifier.widthIn(max = 320.dp),
+                        maxLines = 3,
+                    )
+                }
+            }
         }
         Spacer(Modifier.height(16.dp))
         SectionLabel("알림")
@@ -550,13 +588,13 @@ fun RuleEditor(
             text = "저장",
             onClick = {
                 onSave(
-                    initial.copy(
+                    RuleKeywords.withSelection(
+                        rule = initial,
                         pattern = pattern.trim(),
                         matchMode = mode,
-                        detectMeetup = meetup,
-                        detectGiveaway = giveaway,
                         alertMode = alert,
                         enabled = enabled,
+                        selected = selected,
                     ),
                 )
             },

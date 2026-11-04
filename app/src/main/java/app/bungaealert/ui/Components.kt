@@ -305,7 +305,13 @@ fun DangerButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifie
 }
 
 @Composable
-fun BungaeChip(label: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun BungaeChip(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    maxLines: Int = 1,
+) {
     val background by animateColorAsState(
         if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
         tween(160),
@@ -340,7 +346,8 @@ fun BungaeChip(label: String, selected: Boolean, onClick: () -> Unit, modifier: 
                 style = MaterialTheme.typography.labelLarge,
                 color = foreground,
                 textAlign = TextAlign.Center,
-                maxLines = 1,
+                maxLines = maxLines,
+                overflow = if (maxLines == 1) TextOverflow.Clip else TextOverflow.Ellipsis,
             )
         }
     }
