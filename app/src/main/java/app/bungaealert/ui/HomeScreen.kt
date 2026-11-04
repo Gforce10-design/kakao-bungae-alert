@@ -1,5 +1,9 @@
 package app.bungaealert.ui
 
+import android.Manifest
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -45,6 +49,15 @@ import app.bungaealert.BungaeApp
 import app.bungaealert.detect.PostType
 import app.bungaealert.notify.ListenerRuntime
 
+data class HomePermissionUi(
+    val askListener: Boolean = false,
+    val askNotifications: Boolean = false,
+    val askBattery: Boolean = false,
+    val onListener: () -> Unit = {},
+    val onNotifications: () -> Unit = {},
+    val onBattery: () -> Unit = {},
+)
+
 @Composable
 fun HomeRoute(onStatus: () -> Unit, onGuide: () -> Unit) {
     val context = LocalContext.current
@@ -53,32 +66,47 @@ fun HomeRoute(onStatus: () -> Unit, onGuide: () -> Unit) {
     val rules by graph.rules.state.collectAsState()
     var tick by remember { mutableIntStateOf(0) }
     val lifecycleOwner = LocalLifecycleOwner.current
+    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
+        tick++
+    }
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) tick++
+            if (event == Lifecycle.Event.ON_RESUME) {
+                ListenerRuntime.refreshProbe(context)
+                tick++
+            }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
-    val health = remember(tick) {
-        when {
-            !Permissions.listenerEnabled(context) -> ListenerHealthUi.Blocked
-            !ListenerRuntime.bound -> ListenerHealthUi.Unbound
-            else -> ListenerHealthUi.Watching
-        }
-    }
+    val listenerGranted = remember(tick) { Permissions.listenerEnabled(context) }
+    val notificationsGranted = remember(tick) { Permissions.notificationsAllowed(context) }
+    val batteryFree = remember(tick) { Permissions.batteryUnrestricted(context) }
+    val health = homeListenerHealth(listenerGranted, notificationsGranted, ListenerRuntime.bound)
     HomeScreen(
         health = health,
         groups = groupDetections(log, System.currentTimeMillis()),
         onBanner = {
-            if (!Permissions.listenerEnabled(context)) {
-                openSetting(context, Permissions.listenerSettings(), "알림 접근 설정을 열지 못했습니다.")
-            } else {
-                onStatus()
+            when {
+                !listenerGranted -> openSetting(context, Permissions.listenerSettings(), "알림 접근 설정을 열지 못했습니다.")
+                !notificationsGranted && Build.VERSION.SDK_INT >= 33 -> {
+                    permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }
+                else -> onStatus()
             }
         },
         showGuide = rules.isEmpty(),
         onGuide = onGuide,
+        permission = HomePermissionUi(
+            askListener = !listenerGranted,
+            askNotifications = !notificationsGranted,
+            askBattery = !batteryFree,
+            onListener = { openSetting(context, Permissions.listenerSettings(), "알림 접근 설정을 열지 못했습니다.") },
+            onNotifications = {
+                if (Build.VERSION.SDK_INT >= 33) permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            },
+            onBattery = { openSetting(context, Permissions.batterySettings(context), "배터리 설정을 열지 못했습니다.") },
+        ),
     )
 }
 
@@ -90,6 +118,7 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
     showGuide: Boolean = false,
     onGuide: () -> Unit = {},
+    permission: HomePermissionUi = HomePermissionUi(),
 ) {
     LazyColumn(
         modifier = modifier.fillMaxSize(),
@@ -98,6 +127,35 @@ fun HomeScreen(
     ) {
         item { ScreenTitle("번개알림") }
         item { ListenerBanner(health, onBanner) }
+        if (health == ListenerHealthUi.NeedsPermission &&
+            (permission.askListener || permission.askNotifications || permission.askBattery)
+        ) {
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (permission.askListener) {
+                        PrimaryButton("알림 접근 허용", permission.onListener, Modifier.fillMaxWidth())
+                    }
+                    if (permission.askNotifications) {
+                        PrimaryButton("알림 표시 허용", permission.onNotifications, Modifier.fillMaxWidth())
+                    }
+                    if (permission.askBattery) {
+                        SecondaryButton("배터리 최적화 제외", permission.onBattery, Modifier.fillMaxWidth())
+                    }
+                }
+            }
+        } else if (permission.askBattery) {
+            item {
+                SurfaceCard {
+                    Text(
+                        "배터리 최적화를 끄면 화면이 꺼져도 감시하기 쉽습니다",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(Modifier.size(12.dp))
+                    SecondaryButton("배터리 최적화 제외", permission.onBattery, Modifier.fillMaxWidth())
+                }
+            }
+        }
         if (showGuide) {
             item {
                 SurfaceCard(contentPadding = PaddingValues(vertical = 4.dp)) {

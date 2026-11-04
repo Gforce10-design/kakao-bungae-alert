@@ -19,6 +19,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.bungaealert.data.DetectionRecord
 import app.bungaealert.detect.AlertMode
 import app.bungaealert.detect.BackendIds
+import app.bungaealert.detect.KeywordCodec
 import app.bungaealert.detect.MatchMode
 import app.bungaealert.detect.WatchRule
 import com.github.takahirom.roborazzi.RoborazziOptions
@@ -46,10 +47,10 @@ class ScreenScreenshots {
     @Test fun homeBlockedLight() = shot("home_blocked_light", dark = false, tab = "home") { HomeScreen(ListenerHealthUi.Blocked, groups(), {}) }
     @Test fun homeBlockedDark() = shot("home_blocked_dark", dark = true, tab = "home") { HomeScreen(ListenerHealthUi.Blocked, groups(), {}) }
 
-    @Test fun rulesLight() = shot("rules_light", dark = false, tab = "rules") { RulesScreen(rules(), RuleFilter.All, {}, { _, _ -> }, {}, {}) }
-    @Test fun rulesDark() = shot("rules_dark", dark = true, tab = "rules") { RulesScreen(rules(), RuleFilter.All, {}, { _, _ -> }, {}, {}) }
-    @Test fun rulesEmptyLight() = shot("rules_empty_light", dark = false, tab = "rules") { RulesScreen(emptyList(), RuleFilter.All, {}, { _, _ -> }, {}, {}) }
-    @Test fun rulesEmptyDark() = shot("rules_empty_dark", dark = true, tab = "rules") { RulesScreen(emptyList(), RuleFilter.All, {}, { _, _ -> }, {}, {}) }
+    @Test fun rulesLight() = shot("rules_light", dark = false, tab = "rules") { rulesScreen(rules()) }
+    @Test fun rulesDark() = shot("rules_dark", dark = true, tab = "rules") { rulesScreen(rules()) }
+    @Test fun rulesEmptyLight() = shot("rules_empty_light", dark = false, tab = "rules") { rulesScreen(emptyList()) }
+    @Test fun rulesEmptyDark() = shot("rules_empty_dark", dark = true, tab = "rules") { rulesScreen(emptyList()) }
 
     @Test fun rulesEditorLight() = editor("rules_editor_light", false)
     @Test fun rulesEditorDark() = editor("rules_editor_dark", true)
@@ -126,7 +127,7 @@ class ScreenScreenshots {
             BungaeTheme(darkTheme = dark) {
                 BungaeScaffold(tab = "rules", onTab = {}) { padding ->
                     Box(Modifier.padding(padding).fillMaxSize()) {
-                        RulesScreen(rules(), RuleFilter.All, {}, { _, _ -> }, {}, {})
+                        rulesScreen(rules())
                         Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.45f)))
                         Box(
                             Modifier
@@ -272,6 +273,19 @@ private fun detection(
     alertType = type,
     summary = "",
 )
+
+@Composable
+private fun rulesScreen(rules: List<WatchRule>) {
+    RulesScreen(
+        rules = rules,
+        filter = RuleFilter.All,
+        onFilter = {},
+        onToggle = { _, _ -> },
+        onEdit = {},
+        onAdd = {},
+        keywords = KeywordCodec.defaults(),
+    )
+}
 
 private fun rules() = listOf(
     WatchRule("1", "수다방", MatchMode.ENDS_WITH, true, true, AlertMode.REPEAT, true),

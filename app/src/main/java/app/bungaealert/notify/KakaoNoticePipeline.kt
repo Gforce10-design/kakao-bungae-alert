@@ -10,6 +10,7 @@ import app.bungaealert.detect.ChatMatcher
 import app.bungaealert.detect.DecisionPolicy
 import app.bungaealert.detect.KakaoNoticeParser
 import app.bungaealert.detect.KakaoPackages
+import app.bungaealert.detect.KeywordMatcher
 import app.bungaealert.detect.RawKakaoNotice
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -48,8 +49,11 @@ object KakaoNoticePipeline {
 
     private suspend fun consume(notice: PostedNotice) {
         if (!KakaoPackages.shouldRead(notice.raw.packageName, notice.raw.importance)) return
-        val messages = KakaoNoticeParser.parse(notice.raw)
         val app = BungaeApp.instance
+        val keywords = app.graph.keywords.current()
+        val body = KeywordMatcher.notificationText(notice.raw)
+        if (!KeywordMatcher.matchesAny(keywords, notice.raw.title, body)) return
+        val messages = KakaoNoticeParser.parse(notice.raw)
         val rules = app.graph.rules.current().filter { it.enabled }
         if (rules.isEmpty()) return
         for (message in messages) {

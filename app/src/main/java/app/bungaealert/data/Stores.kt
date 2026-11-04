@@ -5,6 +5,8 @@ import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import app.bungaealert.detect.AlertMode
 import app.bungaealert.detect.BackendIds
+import app.bungaealert.detect.KeywordCodec
+import app.bungaealert.detect.MatchKeyword
 import app.bungaealert.detect.MatchMode
 import app.bungaealert.detect.PostType
 import app.bungaealert.detect.TopicGenerator
@@ -183,6 +185,42 @@ class RulesRepository(context: Context) {
             }
         } catch (_: Exception) {
             emptyList()
+        }
+    }
+}
+
+class KeywordsRepository(context: Context) {
+    private val file = File(context.filesDir, "match-keywords.json")
+    private val stateFlow = MutableStateFlow(read())
+    val state: StateFlow<List<MatchKeyword>> = stateFlow
+
+    fun current(): List<MatchKeyword> = stateFlow.value
+
+    fun save(keywords: List<MatchKeyword>) {
+        write(keywords)
+        stateFlow.value = keywords
+    }
+
+    private fun read(): List<MatchKeyword> {
+        val raw = if (!file.exists()) {
+            null
+        } else {
+            try {
+                file.readText()
+            } catch (_: Exception) {
+                null
+            }
+        }
+        val loaded = KeywordCodec.load(raw)
+        if (raw == null || KeywordCodec.isCorrupt(raw)) write(loaded)
+        return loaded
+    }
+
+    private fun write(keywords: List<MatchKeyword>) {
+        try {
+            file.writeText(KeywordCodec.toJson(keywords))
+        } catch (_: Exception) {
+            // The in-memory list still applies for this process.
         }
     }
 }
