@@ -11,6 +11,7 @@ import app.bungaealert.detect.DecisionPolicy
 import app.bungaealert.detect.KakaoNoticeParser
 import app.bungaealert.detect.KakaoPackages
 import app.bungaealert.detect.KeywordMatcher
+import app.bungaealert.detect.MatchedWords
 import app.bungaealert.detect.RawKakaoNotice
 import app.bungaealert.detect.RuleKeywords
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -104,6 +105,10 @@ object KakaoNoticePipeline {
                 continue
             }
             Log.d(DROP, "pass: chat='${t(message.chatName)}' sender=${t(message.sender, 12)} text='${t(message.text)}'")
+            val matchedWords = MatchedWords.find(
+                matched.flatMap { RuleKeywords.applicable(it, keywords) },
+                message.text,
+            )
             val mode = if (matched.any { it.alertMode == AlertMode.REPEAT }) AlertMode.REPEAT else AlertMode.ONCE
             val settings = app.graph.settings.current()
             val evaluation = DecisionPolicy.evaluate(
@@ -129,6 +134,7 @@ object KakaoNoticePipeline {
                         alerted = evaluation.alert,
                         alertType = evaluation.alertType?.wire,
                         summary = evaluation.summary,
+                        matchedWords = matchedWords,
                     ),
                 )
             }
@@ -147,6 +153,7 @@ object KakaoNoticePipeline {
                     mode = mode,
                     seconds = settings.maxRingSeconds,
                     kakao = notice.contentIntent,
+                    matchedWords = matchedWords,
                 )
             }
         }

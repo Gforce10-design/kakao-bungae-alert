@@ -46,6 +46,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import app.bungaealert.BungaeApp
+import app.bungaealert.detect.MatchedWords
 import app.bungaealert.detect.PostType
 import app.bungaealert.notify.ListenerRuntime
 
@@ -251,7 +252,20 @@ private fun DetectionCard(card: DetectionCardUi) {
                 Spacer(Modifier.size(10.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (card.type != null) TypeChip(card.type)
-                    Spacer(Modifier.weight(1f))
+                    if (card.matchedWords.isNotEmpty()) {
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            MatchedWords.label(card.matchedWords),
+                            modifier = Modifier.weight(1f),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Spacer(Modifier.width(8.dp))
+                    } else {
+                        Spacer(Modifier.weight(1f))
+                    }
                     Text(
                         "${card.score}점",
                         style = MaterialTheme.typography.labelLarge.copy(fontFeatureSettings = "tnum"),

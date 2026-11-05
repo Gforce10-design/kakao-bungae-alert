@@ -19,6 +19,7 @@ import app.bungaealert.BungaeApp
 import app.bungaealert.MainActivity
 import app.bungaealert.R
 import app.bungaealert.detect.AlertMode
+import app.bungaealert.detect.MatchedWords
 import app.bungaealert.detect.PostType
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -99,6 +100,7 @@ object AlertPoster {
         title: String,
         body: String,
         kakao: PendingIntent?,
+        matchedWords: List<String> = emptyList(),
     ) {
         AlertChannels.ensure(context)
         KakaoOpener.remember(id, kakao)
@@ -112,8 +114,8 @@ object AlertPoster {
         val notification = NotificationCompat.Builder(context, AlertChannels.ONCE)
             .setSmallIcon(R.drawable.ic_stat_lightning)
             .setContentTitle(title)
-            .setContentText(body)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+            .setContentText(MatchedWords.collapsed(matchedWords, body))
+            .setStyle(NotificationCompat.BigTextStyle().bigText(MatchedWords.expanded(matchedWords, body)))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_MESSAGE)
             .setAutoCancel(true)
@@ -175,8 +177,9 @@ class AlarmRingService : Service() {
         val title = intent?.getStringExtra(AlarmActivity.EXTRA_TITLE).orEmpty()
         val body = intent?.getStringExtra(AlarmActivity.EXTRA_BODY).orEmpty()
         val seconds = intent?.getIntExtra(EXTRA_SECONDS, 180) ?: 180
+        val words = intent?.getStringArrayListExtra(AlarmActivity.EXTRA_WORDS).orEmpty()
         AlertChannels.ensure(this)
-        val notification = alarmNotification(id, title, body)
+        val notification = alarmNotification(id, title, body, words)
         if (Build.VERSION.SDK_INT >= 29) {
             startForeground(NOTIF_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
         } else {
@@ -230,7 +233,7 @@ class AlarmRingService : Service() {
         feedback.stop()
     }
 
-    private fun alarmNotification(id: String, title: String, body: String): Notification {
+    private fun alarmNotification(id: String, title: String, body: String, words: List<String> = emptyList()): Notification {
         val activity = PendingIntent.getActivity(
             this,
             1,
@@ -238,6 +241,7 @@ class AlarmRingService : Service() {
                 putExtra(AlarmActivity.EXTRA_ID, id)
                 putExtra(AlarmActivity.EXTRA_TITLE, title)
                 putExtra(AlarmActivity.EXTRA_BODY, body)
+                putStringArrayListExtra(AlarmActivity.EXTRA_WORDS, ArrayList(words))
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             },
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
@@ -255,8 +259,8 @@ class AlarmRingService : Service() {
         return NotificationCompat.Builder(this, AlertChannels.ALARM)
             .setSmallIcon(R.drawable.ic_stat_lightning)
             .setContentTitle(title)
-            .setContentText(body)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+            .setContentText(MatchedWords.collapsed(words, body))
+            .setStyle(NotificationCompat.BigTextStyle().bigText(MatchedWords.expanded(words, body)))
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setOngoing(true)
@@ -280,6 +284,7 @@ class AlarmRingService : Service() {
             body: String,
             seconds: Int,
             kakao: PendingIntent?,
+            matchedWords: List<String> = emptyList(),
         ) {
             KakaoOpener.remember(id, kakao)
             val intent = Intent(context, AlarmRingService::class.java).apply {
@@ -287,11 +292,12 @@ class AlarmRingService : Service() {
                 putExtra(AlarmActivity.EXTRA_TITLE, title)
                 putExtra(AlarmActivity.EXTRA_BODY, body)
                 putExtra(EXTRA_SECONDS, seconds)
+                putStringArrayListExtra(AlarmActivity.EXTRA_WORDS, ArrayList(matchedWords))
             }
             try {
                 if (Build.VERSION.SDK_INT >= 26) context.startForegroundService(intent) else context.startService(intent)
             } catch (_: Exception) {
-                AlertPoster.postOnce(context, id, title, body, kakao)
+                AlertPoster.postOnce(context, id, title, body, kakao, matchedWords)
             }
         }
 
@@ -328,11 +334,12 @@ fun dispatchAlert(
     mode: AlertMode,
     seconds: Int,
     kakao: PendingIntent?,
+    matchedWords: List<String> = emptyList(),
 ) {
     val title = "${alertTitle(type)} · $chatName"
     if (mode == AlertMode.REPEAT) {
-        AlarmRingService.start(context, id, title, body, seconds, kakao)
+        AlarmRingService.start(context, id, title, body, seconds, kakao, matchedWords)
     } else {
-        AlertPoster.postOnce(context, id, title, body, kakao)
+        AlertPoster.postOnce(context, id, title, body, kakao, matchedWords)
     }
 }

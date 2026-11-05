@@ -39,6 +39,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import app.bungaealert.detect.MatchedWords
 
 private val AlarmTop = Color(0xFFDC1E28)
 private val AlarmMid = Color(0xFFC4161E)
@@ -51,6 +52,7 @@ private val Pill = RoundedCornerShape(28.dp)
 fun AlarmScreen(
     title: String,
     body: String,
+    matchedWords: List<String> = emptyList(),
     onOpen: () -> Unit,
     onClose: () -> Unit,
     pulse: Boolean = true,
@@ -113,6 +115,17 @@ fun AlarmScreen(
             maxLines = 3,
             overflow = TextOverflow.Ellipsis,
         )
+        if (matchedWords.isNotEmpty()) {
+            Spacer(Modifier.height(12.dp))
+            Text(
+                MatchedWords.label(matchedWords),
+                style = MaterialTheme.typography.titleMedium.copy(fontSize = 18.sp),
+                color = Color.White.copy(alpha = 0.92f),
+                textAlign = TextAlign.Center,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
         if (body.isNotBlank()) {
             Spacer(Modifier.height(16.dp))
             Text(

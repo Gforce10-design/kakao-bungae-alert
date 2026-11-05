@@ -41,6 +41,7 @@ data class DetectionCardUi(
     val timeLabel: String,
     val score: Int,
     val type: PostType?,
+    val matchedWords: List<String> = emptyList(),
 )
 
 data class DetectionGroupUi(
@@ -73,6 +74,7 @@ fun groupDetections(
                 timeLabel = clockLabel(record.atMillis, zone),
                 score = record.score,
                 type = recordType(record),
+                matchedWords = record.matchedWords,
             ),
         )
     }

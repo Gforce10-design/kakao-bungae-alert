@@ -62,6 +62,7 @@ data class DetectionRecord(
     val alerted: Boolean,
     val alertType: String?,
     val summary: String,
+    val matchedWords: List<String> = emptyList(),
 )
 
 class SettingsRepository(context: Context) {
@@ -270,6 +271,7 @@ class DetectionLogRepository(context: Context) {
                 put("alerted", item.alerted)
                 put("alertType", item.alertType ?: "")
                 put("summary", item.summary)
+                put("matchedWords", JSONArray(item.matchedWords))
             })
         }
         file.writeText(array.toString())
@@ -296,6 +298,7 @@ class DetectionLogRepository(context: Context) {
                             alerted = obj.optBoolean("alerted"),
                             alertType = obj.optString("alertType").ifBlank { null },
                             summary = obj.optString("summary"),
+                            matchedWords = obj.optJSONArray("matchedWords").toStringList(),
                         ),
                     )
                 }

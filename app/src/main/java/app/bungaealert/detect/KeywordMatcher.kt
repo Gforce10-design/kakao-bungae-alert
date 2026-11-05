@@ -128,6 +128,43 @@ object KeywordMatcher {
         listOfNotNull(title, text).joinToString("\n")
 }
 
+/**
+ * The user keywords that actually appear in a message, for showing "잡힌 단어" in
+ * alerts and history. Same normalization as [KeywordMatcher], so whatever made a
+ * message match is what gets listed.
+ */
+object MatchedWords {
+    /** Keyword texts found in [text], in order of first appearance, deduplicated. */
+    fun find(keywords: List<MatchKeyword>, text: String?): List<String> {
+        val haystack = KeywordMatcher.normalize(text.orEmpty())
+        if (haystack.isEmpty()) return emptyList()
+        val found = linkedMapOf<String, Pair<Int, String>>()
+        for (keyword in keywords) {
+            if (!keyword.enabled) continue
+            val needle = KeywordMatcher.normalize(keyword.text)
+            if (needle.isEmpty()) continue
+            val index = haystack.indexOf(needle)
+            if (index < 0) continue
+            val shown = KeywordMatcher.canonicalize(keyword.text)
+            if (needle !in found) found[needle] = index to shown
+        }
+        return found.values.sortedBy { it.first }.map { it.second }
+    }
+
+    const val LABEL = "잡힌 단어"
+
+    fun label(words: List<String>): String =
+        if (words.isEmpty()) "" else "$LABEL: ${words.joinToString(", ")}"
+
+    /** One-line notification text: "잡힌 단어: 번개, 모임 · message". */
+    fun collapsed(words: List<String>, body: String): String =
+        listOf(label(words), body).filter { it.isNotBlank() }.joinToString(" · ")
+
+    /** Expanded notification text: the label on its own line above the message. */
+    fun expanded(words: List<String>, body: String): String =
+        listOf(label(words), body).filter { it.isNotBlank() }.joinToString("\n")
+}
+
 object KeywordCodec {
     fun defaults(): List<MatchKeyword> = listOf(
         MatchKeyword(id = "default-bungae", text = "번개", enabled = true),

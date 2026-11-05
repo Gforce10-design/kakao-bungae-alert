@@ -30,11 +30,13 @@ class AlarmActivity : ComponentActivity() {
         val id = intent.getStringExtra(EXTRA_ID).orEmpty()
         val title = intent.getStringExtra(EXTRA_TITLE).orEmpty()
         val body = intent.getStringExtra(EXTRA_BODY).orEmpty()
+        val words = intent.getStringArrayListExtra(EXTRA_WORDS).orEmpty()
         setContent {
             BungaeTheme {
                 AlarmScreen(
                     title = title,
                     body = body,
+                    matchedWords = words,
                     onOpen = {
                         AlarmRingService.stop(this, id, openKakao = true)
                         finish()
@@ -52,6 +54,7 @@ class AlarmActivity : ComponentActivity() {
         const val EXTRA_ID = "id"
         const val EXTRA_TITLE = "title"
         const val EXTRA_BODY = "body"
+        const val EXTRA_WORDS = "matchedWords"
         const val EXTRA_OPEN_ID = "openId"
     }
 }
