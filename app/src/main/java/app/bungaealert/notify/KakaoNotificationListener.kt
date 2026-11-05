@@ -47,7 +47,8 @@ class KakaoNotificationListener : NotificationListenerService() {
             ListenerRuntime.markCallback(this, kakao, key)
             if (!kakao) return
             val importance = rankingImportance(sbn, rankingMap)
-            val raw = extract(sbn, importance)
+            val room = conversationRoomName(sbn, rankingMap)
+            val raw = extract(sbn, importance, room)
             val pending = sbn.notification.contentIntent
             KakaoNoticePipeline.enqueue(PostedNotice(raw, pending))
         } catch (t: Throwable) {
@@ -61,7 +62,40 @@ class KakaoNotificationListener : NotificationListenerService() {
         return if (rankingMap.getRanking(sbn.key, ranking)) ranking.importance else null
     }
 
-    private fun extract(sbn: StatusBarNotification, importance: Int?): RawKakaoNotice {
+    /**
+     * KakaoTalk group notifications put the SENDER in android.title and omit
+     * the conversation title; the room name only exists as the conversation
+     * shortcut's label (shortcut id = room id).
+     */
+    private fun conversationRoomName(sbn: StatusBarNotification, rankingMap: RankingMap?): String? {
+        if (Build.VERSION.SDK_INT < 30) return null
+        return try {
+            val ranking = Ranking()
+            val found = try {
+                currentRanking?.getRanking(sbn.key, ranking) == true
+            } catch (t: Throwable) {
+                false
+            } || (rankingMap?.getRanking(sbn.key, ranking) == true)
+            if (!found) {
+                Log.d(DROP_TAG, "room: no ranking for key; falling back")
+                return null
+            }
+            val shortcut = ranking.conversationShortcutInfo
+            val name = (shortcut?.shortLabel?.toString()?.trim()?.takeIf { it.isNotEmpty() }
+                ?: shortcut?.longLabel?.toString()?.trim()?.takeIf { it.isNotEmpty() })
+            Log.d(
+                DROP_TAG,
+                "room: shortcut=${shortcut?.id ?: "none"} name=${name ?: "null"} " +
+                    "title=${sbn.notification.extras.getCharSequence(Notification.EXTRA_TITLE)}",
+            )
+            name
+        } catch (t: Throwable) {
+            Log.w(DROP_TAG, "room lookup failed: ${t.javaClass.simpleName}")
+            null
+        }
+    }
+
+    private fun extract(sbn: StatusBarNotification, importance: Int?, roomName: String? = null): RawKakaoNotice {
         val extras = sbn.notification.extras
         val lines = extras.getCharSequenceArray(Notification.EXTRA_TEXT_LINES)
             ?.map { it?.toString().orEmpty() }
@@ -88,6 +122,7 @@ class KakaoNotificationListener : NotificationListenerService() {
             isGroupSummary = (sbn.notification.flags and Notification.FLAG_GROUP_SUMMARY) != 0,
             importance = importance,
             postedAtMillis = sbn.postTime,
+            roomName = roomName,
         )
     }
 
@@ -104,5 +139,6 @@ class KakaoNotificationListener : NotificationListenerService() {
 
     companion object {
         private const val TAG = "KakaoListener"
+        private const val DROP_TAG = "BungaeDrop"
     }
 }

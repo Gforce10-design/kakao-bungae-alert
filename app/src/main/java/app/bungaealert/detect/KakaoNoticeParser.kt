@@ -22,6 +22,12 @@ data class RawKakaoNotice(
     val isGroupSummary: Boolean = false,
     val importance: Int? = null,
     val postedAtMillis: Long = 0L,
+    /**
+     * Room name from the notification's conversation shortcut (API 30+
+     * ranking). KakaoTalk group MessagingStyle notifications carry the sender
+     * in android.title and no conversationTitle, so this wins when present.
+     */
+    val roomName: String? = null,
 )
 
 data class ParsedChatMessage(
@@ -48,7 +54,8 @@ object KakaoNoticeParser {
 
     fun parse(raw: RawKakaoNotice): List<ParsedChatMessage> {
         if (!KakaoPackages.shouldRead(raw.packageName, raw.importance)) return emptyList()
-        val chatFromConversation = raw.conversationTitle?.trim()?.takeIf { isChatName(it) }
+        val chatFromConversation = raw.roomName?.trim()?.takeIf { isChatName(it) }
+            ?: raw.conversationTitle?.trim()?.takeIf { isChatName(it) }
         val fromSummary = raw.isGroupSummary && raw.textLines.isNotEmpty()
         val lines = when {
             fromSummary -> messagesFromLines(raw.textLines)

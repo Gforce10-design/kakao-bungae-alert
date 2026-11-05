@@ -38,6 +38,50 @@ class KakaoAndPolicyTest {
         assertTrue(parsed[0].text.contains("번개"))
     }
 
+    private fun groupNotice(roomName: String?, conversationTitle: String? = null, subText: String? = null) =
+        RawKakaoNotice(
+            packageName = KakaoPackages.KAKAO_TALK,
+            title = "김민수",
+            text = "오늘 저녁 번개 하실 분",
+            bigText = null,
+            subText = subText,
+            conversationTitle = conversationTitle,
+            messages = listOf(RawKakaoMessage("김민수", "오늘 저녁 번개 하실 분")),
+            importance = 3,
+            roomName = roomName,
+        )
+
+    @Test
+    fun shortcutRoomNameBeatsSenderTitleAndMatchesRule() {
+        val parsed = KakaoNoticeParser.parse(groupNotice(roomName = "독서모임 (12)"))
+        assertEquals(1, parsed.size)
+        assertEquals("독서모임 (12)", parsed[0].chatName)
+        assertEquals("김민수", parsed[0].sender)
+        assertTrue(ChatMatcher.matches(MatchMode.CONTAINS, "독서모임", parsed[0].chatName))
+    }
+
+    @Test
+    fun shortcutRoomNameTakesPrecedenceOverConversationTitleAndSubText() {
+        val parsed = KakaoNoticeParser.parse(
+            groupNotice(roomName = "독서모임", conversationTitle = "다른방", subText = "부제"),
+        )
+        assertEquals("독서모임", parsed[0].chatName)
+    }
+
+    @Test
+    fun withoutRoomNameFallsBackToExistingOrder() {
+        assertEquals("김민수", KakaoNoticeParser.parse(groupNotice(roomName = null))[0].chatName)
+        assertEquals("김민수", KakaoNoticeParser.parse(groupNotice(roomName = "  "))[0].chatName)
+        assertEquals("다른방", KakaoNoticeParser.parse(groupNotice(null, conversationTitle = "다른방"))[0].chatName)
+        assertEquals("부제", KakaoNoticeParser.parse(groupNotice(null, subText = "부제"))[0].chatName)
+    }
+
+    @Test
+    fun senderTitleAloneDoesNotMatchRoomRule() {
+        val parsed = KakaoNoticeParser.parse(groupNotice(roomName = null))
+        assertFalse(ChatMatcher.matches(MatchMode.CONTAINS, "독서모임", parsed[0].chatName))
+    }
+
     @Test
     fun summaryTextLinesSplitSendersAndSkipCounts() {
         val parsed = KakaoNoticeParser.parse(

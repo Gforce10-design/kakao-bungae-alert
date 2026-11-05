@@ -28,6 +28,8 @@ data class PostedNotice(
 
 object KakaoNoticePipeline {
     private const val TAG = "KakaoListener"
+    private const val DROP = "BungaeDrop"
+    private fun t(v: String?, n: Int = 30) = v.orEmpty().replace("\n", " ").take(n)
     private val scope = CoroutineScope(
         SupervisorJob() +
             Executors.newSingleThreadExecutor { runnable ->
@@ -49,7 +51,10 @@ object KakaoNoticePipeline {
     }
 
     private suspend fun consume(notice: PostedNotice) {
-        if (!KakaoPackages.shouldRead(notice.raw.packageName, notice.raw.importance)) return
+        if (!KakaoPackages.shouldRead(notice.raw.packageName, notice.raw.importance)) {
+            Log.d(DROP, "drop shouldRead: pkg=${notice.raw.packageName} importance=${notice.raw.importance}")
+            return
+        }
         val app = BungaeApp.instance
         val keywords = app.graph.keywords.current()
         val body = KeywordMatcher.notificationText(notice.raw)
@@ -61,17 +66,44 @@ object KakaoNoticePipeline {
                 body,
             )
         }
-        if (interested.isEmpty()) return
+        if (interested.isEmpty()) {
+            Log.d(
+                DROP,
+                "drop keyword-prefilter: room=${t(notice.raw.roomName)} conv=${t(notice.raw.conversationTitle)} " +
+                    "title=${t(notice.raw.title)} enabledRules=${rules.size} body='${t(body)}'",
+            )
+            return
+        }
         val messages = KakaoNoticeParser.parse(notice.raw)
+        if (messages.isEmpty()) {
+            Log.d(DROP, "drop parse-empty: room=${t(notice.raw.roomName)} title=${t(notice.raw.title)} body='${t(body)}'")
+        }
         for (message in messages) {
-            if (message.text.isBlank()) continue
+            if (message.text.isBlank()) {
+                Log.d(DROP, "drop blank-text: chat=${t(message.chatName)} title=${t(notice.raw.title)}")
+                continue
+            }
             val matched = interested.filter { ChatMatcher.matches(it, message.chatName) }
-            if (matched.isEmpty()) continue
-            if (!app.graph.dedupe.shouldProcess(message.chatName, message.text)) continue
+            if (matched.isEmpty()) {
+                Log.d(
+                    DROP,
+                    "drop chat-match: chat='${t(message.chatName)}' title='${t(notice.raw.title)}' " +
+                        "room=${t(notice.raw.roomName)} patterns=${interested.map { it.pattern }} text='${t(message.text)}'",
+                )
+                continue
+            }
+            if (!app.graph.dedupe.shouldProcess(message.chatName, message.text)) {
+                Log.d(DROP, "drop dedupe: chat='${t(message.chatName)}' text='${t(message.text)}'")
+                continue
+            }
             val types = matched.flatMap { rule ->
                 RuleKeywords.postTypes(RuleKeywords.applicable(rule, keywords))
             }.toSet()
-            if (types.isEmpty()) continue
+            if (types.isEmpty()) {
+                Log.d(DROP, "drop no-post-types: chat='${t(message.chatName)}'")
+                continue
+            }
+            Log.d(DROP, "pass: chat='${t(message.chatName)}' sender=${t(message.sender, 12)} text='${t(message.text)}'")
             val mode = if (matched.any { it.alertMode == AlertMode.REPEAT }) AlertMode.REPEAT else AlertMode.ONCE
             val settings = app.graph.settings.current()
             val evaluation = DecisionPolicy.evaluate(
@@ -100,6 +132,11 @@ object KakaoNoticePipeline {
                     ),
                 )
             }
+            Log.d(
+                DROP,
+                "decision: chat='${t(message.chatName)}' alert=${evaluation.alert} score=${evaluation.relevantScore} " +
+                    "type=${evaluation.alertType?.wire} summary='${t(evaluation.summary, 60)}'",
+            )
             if (evaluation.alert) {
                 dispatchAlert(
                     context = app,
