@@ -33,14 +33,23 @@ import org.json.JSONObject
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
-class ReplyHub {
+class ReplyHub(
+    private val clock: () -> Long = { System.currentTimeMillis() },
+    private val earlyTtlMs: Long = EARLY_TTL_MS,
+    private val earlyMax: Int = EARLY_MAX,
+) {
+    private class Early(val verdict: JudgeVerdict, val at: Long)
+
     private val waiters = ConcurrentHashMap<String, CompletableDeferred<JudgeVerdict>>()
-    private val early = ConcurrentHashMap<String, JudgeVerdict>()
+    private val early = LinkedHashMap<String, Early>()
 
     fun register(requestId: String): CompletableDeferred<JudgeVerdict> {
         val deferred = CompletableDeferred<JudgeVerdict>()
-        val raced = early.remove(requestId)
-        if (raced != null) deferred.complete(raced)
+        val raced = synchronized(early) {
+            evictLocked()
+            early.remove(requestId)
+        }
+        if (raced != null) deferred.complete(raced.verdict)
         waiters[requestId] = deferred
         return deferred
     }
@@ -48,11 +57,44 @@ class ReplyHub {
     fun deliver(verdict: JudgeVerdict) {
         val id = verdict.requestId ?: return
         val waiter = waiters.remove(id)
-        if (waiter != null) waiter.complete(verdict) else early[id] = verdict
+        if (waiter != null) {
+            waiter.complete(verdict)
+            return
+        }
+        synchronized(early) {
+            early.remove(id)
+            early[id] = Early(verdict, clock())
+            evictLocked()
+        }
     }
 
     fun cancel(requestId: String) {
         waiters.remove(requestId)?.cancel()
+    }
+
+    /** Number of unclaimed replies currently held (after dropping expired ones). */
+    fun earlySize(): Int = synchronized(early) {
+        evictLocked()
+        early.size
+    }
+
+    // Callers hold the lock. Entries are in insertion (= arrival) order, so the oldest come first.
+    private fun evictLocked() {
+        val now = clock()
+        val it = early.entries.iterator()
+        while (it.hasNext()) {
+            if (now - it.next().value.at >= earlyTtlMs) it.remove() else break
+        }
+        while (early.size > earlyMax) {
+            val oldest = early.entries.iterator()
+            oldest.next()
+            oldest.remove()
+        }
+    }
+
+    companion object {
+        const val EARLY_TTL_MS = 2 * 60_000L
+        const val EARLY_MAX = 64
     }
 }
 

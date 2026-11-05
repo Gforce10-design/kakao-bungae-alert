@@ -61,6 +61,10 @@ class NtfySubscribeService : Service() {
         }
     }
 
+    // Resume point for reconnects: last received ntfy message id, else a unix-seconds timestamp.
+    @Volatile private var lastCursor: String? = null
+    private var cursorSource: String? = null
+
     private suspend fun listen() {
         var backoff = 1_000L
         while (scope.isActive) {
@@ -72,12 +76,21 @@ class NtfySubscribeService : Service() {
                 stopSelf()
                 return
             }
-            val url = NtfyEvents.streamUrl(settings.ntfyServer, settings.ntfyTopic)
+            val source = settings.ntfyServer.trim() + "|" + settings.ntfyTopic
+            if (cursorSource != source) {
+                cursorSource = source
+                lastCursor = null
+            }
+            val attemptStartSec = System.currentTimeMillis() / 1000 - SINCE_SKEW_SEC
+            val url = NtfyEvents.streamUrl(settings.ntfyServer, settings.ntfyTopic, lastCursor)
             if (url == null) {
                 delay(5_000)
                 continue
             }
             val connected = readStream(url, app.graph.replies)
+            // Nothing received yet: next attempt replays from when this one started, so a reply
+            // published while we were disconnected is still delivered.
+            if (lastCursor == null) lastCursor = attemptStartSec.toString()
             backoff = if (connected) 1_000L else (backoff * 2).coerceAtMost(60_000L)
             delay(backoff)
         }
@@ -91,6 +104,7 @@ class NtfySubscribeService : Service() {
                 val source = response.body?.source() ?: return false
                 while (!source.exhausted()) {
                     val line = source.readUtf8Line() ?: break
+                    NtfyEvents.cursorFromLine(line)?.let { lastCursor = it }
                     val verdict = NtfyEvents.verdictFromLine(line, BackendIds.GROK_WEBHOOK) ?: continue
                     replies.deliver(verdict)
                 }
@@ -103,6 +117,7 @@ class NtfySubscribeService : Service() {
 
     companion object {
         private const val NOTIF_ID = 42
+        private const val SINCE_SKEW_SEC = 5L
         private const val CHANNEL = "bungae_ntfy"
 
         fun start(context: Context) {

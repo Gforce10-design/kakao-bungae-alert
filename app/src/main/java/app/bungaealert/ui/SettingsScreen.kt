@@ -46,6 +46,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.bungaealert.BuildConfig
 import app.bungaealert.BungaeApp
+import app.bungaealert.ai.ModelProvider
+import app.bungaealert.ai.ModelValidator
 import app.bungaealert.ai.NtfySubscribeService
 import app.bungaealert.auth.ClaudeSubscription
 import app.bungaealert.auth.CodexSubscription
@@ -125,6 +127,7 @@ data class SettingsActions(
     val onOpenaiModel: (String) -> Unit = {},
     val onClaudeKey: (String) -> Unit = {},
     val onClaudeModel: (String) -> Unit = {},
+    val onValidateModel: suspend (ModelProvider, String) -> String? = { _, _ -> null },
     val onCodexModel: (String) -> Unit = {},
     val onCopilotModel: (String) -> Unit = {},
     val onOpenRisk: () -> Unit = {},
@@ -284,6 +287,14 @@ fun SettingsRoute(
             onOpenaiModel = { graph.settings.update(graph.settings.current().copy(openaiModel = it)) },
             onClaudeKey = { claude = it; graph.secrets.put(SecretStore.CLAUDE_KEY, it) },
             onClaudeModel = { graph.settings.update(graph.settings.current().copy(claudeModel = it)) },
+            onValidateModel = { provider, id ->
+                val key = when (provider) {
+                    ModelProvider.Gemini -> gemini
+                    ModelProvider.OpenAI -> openai
+                    ModelProvider.Claude -> claude
+                }
+                withContext(Dispatchers.IO) { ModelValidator.validate(provider, key, id) }
+            },
             onCodexModel = { graph.settings.update(graph.settings.current().copy(codexModel = it)) },
             onCopilotModel = { graph.settings.update(graph.settings.current().copy(copilotModel = it)) },
             onOpenRisk = { risk = true },
@@ -542,15 +553,15 @@ private fun JudgesTab(model: SettingsModel, actions: SettingsActions) {
         SurfaceCard {
             BungaeTextField(model.geminiKey, actions.onGeminiKey, "Gemini", secret = true)
             Spacer(Modifier.height(8.dp))
-            BungaeTextField(model.geminiModel, actions.onGeminiModel, "Gemini 모델")
+            ModelField(ModelProvider.Gemini, model.geminiModel, { actions.onValidateModel(ModelProvider.Gemini, it) }, actions.onGeminiModel)
             Spacer(Modifier.height(12.dp))
             BungaeTextField(model.openaiKey, actions.onOpenaiKey, "OpenAI", secret = true)
             Spacer(Modifier.height(8.dp))
-            BungaeTextField(model.openaiModel, actions.onOpenaiModel, "OpenAI 모델")
+            ModelField(ModelProvider.OpenAI, model.openaiModel, { actions.onValidateModel(ModelProvider.OpenAI, it) }, actions.onOpenaiModel)
             Spacer(Modifier.height(12.dp))
             BungaeTextField(model.claudeKey, actions.onClaudeKey, "Claude", secret = true)
             Spacer(Modifier.height(8.dp))
-            BungaeTextField(model.claudeModel, actions.onClaudeModel, "Claude 모델")
+            ModelField(ModelProvider.Claude, model.claudeModel, { actions.onValidateModel(ModelProvider.Claude, it) }, actions.onClaudeModel)
         }
     }
     Spacer(Modifier.height(16.dp))

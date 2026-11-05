@@ -111,11 +111,31 @@ object GrokRoutinePrompt {
 }
 
 object NtfyEvents {
-    fun streamUrl(server: String, topic: String): String? {
+    /**
+     * [since] is an ntfy `since` value: a message id or a unix timestamp in seconds. When set, the
+     * server replays messages published after it so replies sent during a disconnect are not lost.
+     */
+    fun streamUrl(server: String, topic: String, since: String? = null): String? {
         if (!TopicGenerator.isSafeTopic(topic)) return null
         val base = server.trim().trimEnd('/')
         if (!base.startsWith("https://") && !base.startsWith("http://")) return null
-        return "$base/$topic/json"
+        val cursor = since?.trim().orEmpty()
+        val safe = cursor.isNotEmpty() && cursor.all { it.isLetterOrDigit() || it == '_' || it == '-' }
+        return if (safe) "$base/$topic/json?since=$cursor" else "$base/$topic/json"
+    }
+
+    /** Resume point carried by one ntfy event line: the message id, else its unix time in seconds. */
+    fun cursorFromLine(line: String): String? {
+        val event = try {
+            JSONObject(line.trim())
+        } catch (_: Exception) {
+            return null
+        }
+        if (event.optString("event") != "message") return null
+        val id = event.optString("id")
+        if (id.isNotEmpty() && id.all { it.isLetterOrDigit() || it == '_' || it == '-' }) return id
+        val time = event.optLong("time", 0L)
+        return if (time > 0L) time.toString() else null
     }
 
     fun verdictFromLine(line: String, backendId: String): JudgeVerdict? {

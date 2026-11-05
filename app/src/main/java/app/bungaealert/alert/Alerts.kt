@@ -15,6 +15,7 @@ import android.media.RingtoneManager
 import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
+import android.os.SystemClock
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
@@ -169,10 +170,17 @@ class AlarmRingService : Service() {
         }
         becameForeground = true
         acquireWake(seconds)
-        startRinging()
+        // The cap counts from the moment the ringtone is actually playing (not from the service
+        // start, which includes slow ringtone setup), on the monotonic elapsedRealtime clock.
+        val ringStartedAt = startRinging()
         stopJob?.cancel()
         stopJob = scope.launch {
-            delay(seconds * 1000L)
+            val deadline = ringStartedAt + seconds * 1000L
+            while (true) {
+                val remaining = deadline - SystemClock.elapsedRealtime()
+                if (remaining <= 0L) break
+                delay(remaining)
+            }
             stopRinging()
             stopForeground(STOP_FOREGROUND_REMOVE)
             stopSelf()
@@ -196,8 +204,10 @@ class AlarmRingService : Service() {
         }
     }
 
-    private fun startRinging() {
+    /** Starts sound and vibration and returns the [SystemClock.elapsedRealtime] when playback began. */
+    private fun startRinging(): Long {
         stopRinging()
+        var startedAt = SystemClock.elapsedRealtime()
         val uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
             ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
         ringtone = RingtoneManager.getRingtone(this, uri)?.also { tone ->
@@ -209,6 +219,7 @@ class AlarmRingService : Service() {
             }
             if (Build.VERSION.SDK_INT >= 28) tone.isLooping = true
             tone.play()
+            startedAt = SystemClock.elapsedRealtime()
         }
         val vibrator = if (Build.VERSION.SDK_INT >= 31) {
             getSystemService(VibratorManager::class.java).defaultVibrator
@@ -226,6 +237,7 @@ class AlarmRingService : Service() {
                 }
             }
         }
+        return startedAt
     }
 
     private fun stopRinging() {
