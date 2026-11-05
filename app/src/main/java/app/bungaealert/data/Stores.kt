@@ -3,12 +3,16 @@ package app.bungaealert.data
 import android.content.Context
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
+import app.bungaealert.detect.AlarmSound
+import app.bungaealert.detect.AlertFeel
 import app.bungaealert.detect.AlertMode
 import app.bungaealert.detect.BackendIds
 import app.bungaealert.detect.KeywordCodec
 import app.bungaealert.detect.MatchKeyword
 import app.bungaealert.detect.MatchMode
 import app.bungaealert.detect.PostType
+import app.bungaealert.detect.VibrationPattern
+import app.bungaealert.detect.VibrationStrength
 import app.bungaealert.detect.TopicGenerator
 import app.bungaealert.detect.WatchRule
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -37,7 +41,14 @@ data class AppSettings(
     val grokHeaderName: String = "Authorization",
     val subscriptionRiskAccepted: Boolean = false,
     val listenerKeepAlive: Boolean = true,
-)
+    val alarmSound: AlarmSound = AlarmSound.DEFAULT,
+    val vibrationEnabled: Boolean = true,
+    val vibrationStrength: VibrationStrength = VibrationStrength.DEFAULT,
+    val vibrationPattern: VibrationPattern = VibrationPattern.DEFAULT,
+) {
+    val feel: AlertFeel
+        get() = AlertFeel(alarmSound, vibrationEnabled, vibrationStrength, vibrationPattern)
+}
 
 data class DetectionRecord(
     val id: String,
@@ -113,6 +124,10 @@ class SettingsRepository(context: Context) {
             put("grokHeaderName", settings.grokHeaderName)
             put("subscriptionRiskAccepted", settings.subscriptionRiskAccepted)
             put("listenerKeepAlive", settings.listenerKeepAlive)
+            put("alarmSound", settings.alarmSound.wire)
+            put("vibrationEnabled", settings.vibrationEnabled)
+            put("vibrationStrength", settings.vibrationStrength.wire)
+            put("vibrationPattern", settings.vibrationPattern.wire)
         }
 
         fun fromJson(json: JSONObject): AppSettings = AppSettings(
@@ -135,6 +150,10 @@ class SettingsRepository(context: Context) {
             grokHeaderName = json.optString("grokHeaderName", "Authorization"),
             subscriptionRiskAccepted = json.optBoolean("subscriptionRiskAccepted"),
             listenerKeepAlive = json.optBoolean("listenerKeepAlive", true),
+            alarmSound = AlarmSound.fromWire(json.optString("alarmSound")),
+            vibrationEnabled = json.optBoolean("vibrationEnabled", true),
+            vibrationStrength = VibrationStrength.fromWire(json.optString("vibrationStrength")),
+            vibrationPattern = VibrationPattern.fromWire(json.optString("vibrationPattern")),
         )
     }
 }

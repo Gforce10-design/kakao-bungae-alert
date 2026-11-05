@@ -111,6 +111,7 @@ data class SettingsModel(
     val updateMessage: String = "",
     val updateBusy: Boolean = false,
     val updateUrl: String = "",
+    val feelSummary: String = "",
 )
 
 data class SettingsActions(
@@ -158,6 +159,7 @@ data class SettingsActions(
     val onKeepAlive: (Boolean) -> Unit = {},
     val onSamsung: (Int) -> Unit = {},
     val onOpenOss: () -> Unit = {},
+    val onOpenAlarmFeel: () -> Unit = {},
     val onOpenHelp: () -> Unit = {},
     val onCheckUpdate: () -> Unit = {},
     val onOpenUpdate: () -> Unit = {},
@@ -170,6 +172,7 @@ fun SettingsRoute(
     onOpenTrial: () -> Unit,
     onOpenOss: () -> Unit,
     onOpenHelp: () -> Unit,
+    onOpenAlarmFeel: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val graph = (context.applicationContext as BungaeApp).graph
@@ -244,6 +247,7 @@ fun SettingsRoute(
         updateMessage = updateMessage,
         updateBusy = updateBusy,
         updateUrl = updateUrl,
+        feelSummary = alertFeelSummary(settings.feel),
     )
     SettingsScreen(
         model = model,
@@ -380,6 +384,7 @@ fun SettingsRoute(
                 openSetting(context, Permissions.samsungBackgroundList(type), "삼성 배터리 화면을 열지 못했습니다.")
             },
             onOpenOss = onOpenOss,
+            onOpenAlarmFeel = onOpenAlarmFeel,
             onOpenHelp = onOpenHelp,
             onCheckUpdate = {
                 if (!updateBusy) {
@@ -498,6 +503,11 @@ fun SettingsScreen(
 
 @Composable
 private fun AlarmTab(model: SettingsModel, actions: SettingsActions) {
+    SectionLabel("소리·진동")
+    SurfaceCard(contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 4.dp)) {
+        CheckLine("알람 소리·진동", value = model.feelSummary.ifBlank { null }, onClick = actions.onOpenAlarmFeel)
+    }
+    Spacer(Modifier.height(16.dp))
     SectionLabel("민감도")
     SurfaceCard {
         SettingValue("기준", "${Sensitivity.cutoff(model.sensitivity)}점")

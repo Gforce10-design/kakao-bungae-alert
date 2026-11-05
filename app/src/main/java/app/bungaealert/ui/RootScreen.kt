@@ -51,8 +51,10 @@ fun RootScreen() {
                     onOpenTrial = { nav.navigate("trial") { launchSingleTop = true } },
                     onOpenOss = { nav.navigate("oss") { launchSingleTop = true } },
                     onOpenHelp = { nav.navigate("help") { launchSingleTop = true } },
+                    onOpenAlarmFeel = { nav.navigate("alert_feel") { launchSingleTop = true } },
                 )
             }
+            composable("alert_feel") { AlertFeelRoute(onBack = { nav.popBackStack() }) }
             composable("status") { StatusRoute(onBack = { nav.popBackStack() }) }
             composable("trial") { TrialRoute(onBack = { nav.popBackStack() }) }
             composable("oss") { OssScreen(onBack = { nav.popBackStack() }) }
@@ -64,7 +66,7 @@ fun RootScreen() {
 private fun tabFor(route: String?): String? = when (route) {
     "home", "status" -> "home"
     "rules" -> "rules"
-    "settings", "oss", "trial", "help" -> "settings"
+    "settings", "oss", "trial", "help", "alert_feel" -> "settings"
     else -> null
 }
 

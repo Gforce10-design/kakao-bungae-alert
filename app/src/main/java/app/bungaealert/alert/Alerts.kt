@@ -9,17 +9,13 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
-import android.media.AudioAttributes
-import android.media.Ringtone
-import android.media.RingtoneManager
 import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
 import android.os.SystemClock
-import android.os.VibrationEffect
-import android.os.Vibrator
-import android.os.VibratorManager
 import androidx.core.app.NotificationCompat
+import android.util.Log
+import app.bungaealert.BungaeApp
 import app.bungaealert.MainActivity
 import app.bungaealert.R
 import app.bungaealert.detect.AlertMode
@@ -56,14 +52,21 @@ object KakaoOpener {
 }
 
 object AlertChannels {
-    const val ONCE = "bungae_once"
+    /**
+     * Versioned id: a channel's sound/vibration are frozen at creation, so the old
+     * sounding "bungae_once" channel is dropped and this one is silent. Sound and
+     * vibration come from [AlertFeedback], read from settings at alarm time.
+     */
+    const val ONCE = "bungae_once_v2"
+    private const val ONCE_LEGACY = "bungae_once"
     const val ALARM = "bungae_alarm"
 
     fun ensure(context: Context) {
         if (Build.VERSION.SDK_INT < 26) return
         val manager = context.getSystemService(NotificationManager::class.java)
         val bypass = manager.isNotificationPolicyAccessGranted
-        ensureOne(manager, ONCE, context.getString(R.string.channel_once), context.getString(R.string.channel_once_desc), bypass, sound = true)
+        if (manager.getNotificationChannel(ONCE_LEGACY) != null) manager.deleteNotificationChannel(ONCE_LEGACY)
+        ensureOne(manager, ONCE, context.getString(R.string.channel_once), context.getString(R.string.channel_once_desc), bypass, sound = false)
         ensureOne(manager, ALARM, context.getString(R.string.channel_alarm), context.getString(R.string.channel_alarm_desc), bypass, sound = false)
     }
 
@@ -83,6 +86,7 @@ object AlertChannels {
             this.description = description
             setBypassDnd(bypass)
             if (!sound) setSound(null, null)
+            enableVibration(false)
         }
         manager.createNotificationChannel(channel)
     }
@@ -116,6 +120,16 @@ object AlertPoster {
             .setContentIntent(content)
             .build()
         notify(context, id.hashCode(), notification)
+        playOnceFeedback(context)
+    }
+
+    private fun playOnceFeedback(context: Context) {
+        try {
+            val feel = BungaeApp.instance.graph.settings.current().feel
+            AlertFeedback.shared(context).start(feel, loop = false)
+        } catch (t: Throwable) {
+            Log.w("BungaeAlert", "once feedback failed: ${t.javaClass.simpleName}")
+        }
     }
 
     fun notify(context: Context, id: Int, notification: Notification) {
@@ -130,7 +144,7 @@ class AlarmRingService : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var becameForeground = false
     private var stopJob: Job? = null
-    private var ringtone: Ringtone? = null
+    private val feedback by lazy { AlertFeedback(this) }
     private var wakeLock: PowerManager.WakeLock? = null
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -204,52 +218,16 @@ class AlarmRingService : Service() {
         }
     }
 
-    /** Starts sound and vibration and returns the [SystemClock.elapsedRealtime] when playback began. */
+    /** Starts sound and vibration from the current settings; returns the [SystemClock.elapsedRealtime] when playback began. */
     private fun startRinging(): Long {
         stopRinging()
-        var startedAt = SystemClock.elapsedRealtime()
-        val uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
-            ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
-        ringtone = RingtoneManager.getRingtone(this, uri)?.also { tone ->
-            if (Build.VERSION.SDK_INT >= 21) {
-                tone.audioAttributes = AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_ALARM)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                    .build()
-            }
-            if (Build.VERSION.SDK_INT >= 28) tone.isLooping = true
-            tone.play()
-            startedAt = SystemClock.elapsedRealtime()
-        }
-        val vibrator = if (Build.VERSION.SDK_INT >= 31) {
-            getSystemService(VibratorManager::class.java).defaultVibrator
-        } else {
-            @Suppress("DEPRECATION")
-            getSystemService(Vibrator::class.java)
-        }
-        vibrator.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 600, 400), 0))
-        if (Build.VERSION.SDK_INT < 28) {
-            scope.launch {
-                while (true) {
-                    delay(1_500)
-                    val tone = ringtone ?: break
-                    if (!tone.isPlaying) tone.play()
-                }
-            }
-        }
-        return startedAt
+        val feel = BungaeApp.instance.graph.settings.current().feel
+        feedback.start(feel, loop = true)
+        return SystemClock.elapsedRealtime()
     }
 
     private fun stopRinging() {
-        ringtone?.stop()
-        ringtone = null
-        val vibrator = if (Build.VERSION.SDK_INT >= 31) {
-            getSystemService(VibratorManager::class.java).defaultVibrator
-        } else {
-            @Suppress("DEPRECATION")
-            getSystemService(Vibrator::class.java)
-        }
-        vibrator.cancel()
+        feedback.stop()
     }
 
     private fun alarmNotification(id: String, title: String, body: String): Notification {
