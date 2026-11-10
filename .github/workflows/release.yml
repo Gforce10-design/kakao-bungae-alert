@@ -167,7 +167,7 @@ jobs:
           commit: ${GITHUB_SHA}
           signing: ${signing}
 
-          첨부 APK를 받아 직접 설치합니다. 자동 설치는 하지 않습니다.
+          앱에서 업데이트를 누르면 이 파일을 받아 확인한 뒤 설치를 시작합니다. 누르기 전에는 설치하지 않습니다. 휴대폰 설치 확인 창은 한 번 나옵니다.
           EOF
           sed -i 's/^[[:space:]]*//' "$notes_file"
           if gh release view "$tag" --repo "$repo" >/dev/null 2>&1; then

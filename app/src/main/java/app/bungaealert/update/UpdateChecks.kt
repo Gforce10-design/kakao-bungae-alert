@@ -7,11 +7,11 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
+import app.bungaealert.MainActivity
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingPeriodicWorkPolicy
@@ -25,11 +25,20 @@ import app.bungaealert.BuildConfig
 import app.bungaealert.R
 import java.util.concurrent.TimeUnit
 
-data class AvailableUpdate(val versionCode: Int, val tag: String, val url: String)
+data class AvailableUpdate(
+    val versionCode: Int,
+    val tag: String,
+    val url: String,
+    val apkUrl: String = "",
+    val apkName: String = "",
+    val checksumUrl: String = "",
+)
 
 object UpdateNotifications {
     const val CHANNEL_ID = "app_update"
     const val NOTIFICATION_ID = 77
+    private const val OPEN_REQUEST = 77
+    private const val ACTION_REQUEST = 78
 
     fun canPost(context: Context): Boolean {
         if (Build.VERSION.SDK_INT >= 33) {
@@ -64,25 +73,33 @@ object UpdateNotifications {
         }
         val label = "${SemanticVersion.display(tag)} ($versionCode)"
         val text = context.getString(R.string.update_notification_text, label)
-        val view = Intent(Intent.ACTION_VIEW, Uri.parse(htmlUrl)).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK
-        }
-        val pending = PendingIntent.getActivity(
-            context,
-            NOTIFICATION_ID,
-            view,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
+        val open = pending(context, OPEN_REQUEST, startUpdate = false)
+        val update = pending(context, ACTION_REQUEST, startUpdate = true)
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_stat_lightning)
             .setContentTitle(context.getString(R.string.channel_update))
             .setContentText(text)
             .setStyle(NotificationCompat.BigTextStyle().bigText(text))
             .setAutoCancel(true)
-            .setContentIntent(pending)
+            .setContentIntent(open)
+            .addAction(R.drawable.ic_stat_lightning, context.getString(R.string.update_action), update)
             .setCategory(NotificationCompat.CATEGORY_RECOMMENDATION)
             .build()
         manager.notify(NOTIFICATION_ID, notification)
+    }
+
+    private fun pending(context: Context, requestCode: Int, startUpdate: Boolean): PendingIntent {
+        val intent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            putExtra(MainActivity.EXTRA_ROUTE, MainActivity.ROUTE_SETTINGS)
+            if (startUpdate) putExtra(MainActivity.EXTRA_START_UPDATE, true)
+        }
+        return PendingIntent.getActivity(
+            context,
+            requestCode,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
     }
 }
 
@@ -93,6 +110,9 @@ internal object UpdatePrefs {
     private const val KEY_AVAILABLE_CODE = "available_version_code"
     private const val KEY_AVAILABLE_TAG = "available_tag"
     private const val KEY_AVAILABLE_URL = "available_url"
+    private const val KEY_APK_URL = "available_apk_url"
+    private const val KEY_APK_NAME = "available_apk_name"
+    private const val KEY_SUMS_URL = "available_sums_url"
 
     private fun prefs(context: Context) =
         context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
@@ -132,16 +152,26 @@ internal object UpdatePrefs {
         val tag = stored.getString(KEY_AVAILABLE_TAG, null).orEmpty()
         val url = stored.getString(KEY_AVAILABLE_URL, null).orEmpty()
         if (code <= 0 || !url.startsWith("https://")) return null
-        return AvailableUpdate(code, tag, url)
+        return AvailableUpdate(
+            versionCode = code,
+            tag = tag,
+            url = url,
+            apkUrl = stored.getString(KEY_APK_URL, null).orEmpty(),
+            apkName = stored.getString(KEY_APK_NAME, null).orEmpty(),
+            checksumUrl = stored.getString(KEY_SUMS_URL, null).orEmpty(),
+        )
     }
 
-    fun saveAvailable(context: Context, versionCode: Int, tag: String, url: String) {
-        if (versionCode <= 0 || !url.startsWith("https://")) return
+    fun saveAvailable(context: Context, update: AvailableUpdate) {
+        if (update.versionCode <= 0 || !update.url.startsWith("https://")) return
         prefs(context).edit()
-            .putInt(KEY_AVAILABLE_CODE, versionCode)
-            .putString(KEY_AVAILABLE_TAG, tag)
-            .putString(KEY_AVAILABLE_URL, url)
-            .apply()
+            .putInt(KEY_AVAILABLE_CODE, update.versionCode)
+            .putString(KEY_AVAILABLE_TAG, update.tag)
+            .putString(KEY_AVAILABLE_URL, update.url)
+            .putString(KEY_APK_URL, update.apkUrl)
+            .putString(KEY_APK_NAME, update.apkName)
+            .putString(KEY_SUMS_URL, update.checksumUrl)
+            .commit()
     }
 
     fun clearAvailable(context: Context) {
@@ -149,6 +179,9 @@ internal object UpdatePrefs {
             .remove(KEY_AVAILABLE_CODE)
             .remove(KEY_AVAILABLE_TAG)
             .remove(KEY_AVAILABLE_URL)
+            .remove(KEY_APK_URL)
+            .remove(KEY_APK_NAME)
+            .remove(KEY_SUMS_URL)
             .apply()
     }
 }
@@ -200,17 +233,35 @@ object UpdateChecks {
     private fun apply(context: Context, decision: UpdateDecision) {
         when (decision) {
             is UpdateDecision.Notify -> {
-                UpdateNotifications.post(context, decision.tag, decision.versionCode, decision.htmlUrl)
+                UpdatePrefs.saveAvailable(context, available(decision.tag, decision.versionCode, decision.htmlUrl, decision.apkUrl, decision.apkName, decision.checksumUrl))
                 UpdatePrefs.saveNotified(context, decision.versionCode)
-                UpdatePrefs.saveAvailable(context, decision.versionCode, decision.tag, decision.htmlUrl)
+                UpdateNotifications.post(context, decision.tag, decision.versionCode, decision.htmlUrl)
             }
             is UpdateDecision.AlreadySent ->
-                UpdatePrefs.saveAvailable(context, decision.versionCode, decision.tag, decision.htmlUrl)
+                UpdatePrefs.saveAvailable(context, available(decision.tag, decision.versionCode, decision.htmlUrl, decision.apkUrl, decision.apkName, decision.checksumUrl))
             is UpdateDecision.NeedsPermission ->
-                UpdatePrefs.saveAvailable(context, decision.versionCode, decision.tag, decision.htmlUrl)
+                UpdatePrefs.saveAvailable(context, available(decision.tag, decision.versionCode, decision.htmlUrl, decision.apkUrl, decision.apkName, decision.checksumUrl))
             is UpdateDecision.Current -> UpdatePrefs.clearAvailable(context)
             is UpdateDecision.Unavailable -> Unit
         }
+    }
+
+    private fun available(
+        tag: String,
+        versionCode: Int,
+        htmlUrl: String,
+        apkUrl: String?,
+        apkName: String?,
+        checksumUrl: String?,
+    ): AvailableUpdate {
+        return AvailableUpdate(
+            versionCode = versionCode,
+            tag = tag,
+            url = htmlUrl,
+            apkUrl = apkUrl?.takeIf(HttpsOnly::accept).orEmpty(),
+            apkName = apkName.orEmpty(),
+            checksumUrl = checksumUrl?.takeIf(HttpsOnly::accept).orEmpty(),
+        )
     }
 }
 

@@ -4,10 +4,11 @@ import android.Manifest
 import android.app.Application
 import android.app.NotificationManager
 import android.content.Intent
-import android.net.Uri
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import app.bungaealert.MainActivity
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -20,8 +21,17 @@ import org.robolectric.annotation.Config
 @Config(sdk = [33], application = Application::class)
 class UpdateNotificationTest {
     private val releaseUrl = "https://github.com/Gforce10-design/kakao-bungae-alert/releases/tag/v1.2.0"
+    private val apkUrl = "https://github.com/Gforce10-design/kakao-bungae-alert/releases/download/v1.2.0/bungae-alert-v1.2.0-vc42.apk"
+    private val sumsUrl = "https://github.com/Gforce10-design/kakao-bungae-alert/releases/download/v1.2.0/SHA256SUMS"
     private val source = ReleaseSource {
-        ReleaseQuery.Found("v1.2.0", releaseUrl, 42)
+        ReleaseQuery.Found(
+            tag = "v1.2.0",
+            htmlUrl = releaseUrl,
+            versionCode = 42,
+            apkUrl = apkUrl,
+            apkName = "bungae-alert-v1.2.0-vc42.apk",
+            checksumUrl = sumsUrl,
+        )
     }
 
     @Test
@@ -38,17 +48,29 @@ class UpdateNotificationTest {
         assertNotNull(notification)
         val channel = manager.getNotificationChannel(UpdateNotifications.CHANNEL_ID)
         assertEquals("업데이트", channel.name.toString())
-        assertEquals("새 버전 v1.2.0 (42)가 있어요. 눌러서 APK를 받으세요.", notification.extras.getString("android.text"))
+        assertEquals("새 버전 v1.2.0 (42)가 있어요. 업데이트를 누르면 받아 설치합니다.", notification.extras.getString("android.text"))
 
         val intent = shadowOf(notification.contentIntent).savedIntent
-        assertEquals(Intent.ACTION_VIEW, intent.action)
-        assertEquals(Uri.parse(releaseUrl), intent.data)
+        assertEquals(MainActivity::class.java.name, intent.component?.className)
+        assertEquals(MainActivity.ROUTE_SETTINGS, intent.getStringExtra(MainActivity.EXTRA_ROUTE))
+        assertFalse(intent.getBooleanExtra(MainActivity.EXTRA_START_UPDATE, false))
         assertTrue(intent.flags and Intent.FLAG_ACTIVITY_NEW_TASK != 0)
+
+        val action = notification.actions.single()
+        assertEquals("업데이트", action.title.toString())
+        val actionIntent = shadowOf(action.actionIntent).savedIntent
+        assertEquals(MainActivity::class.java.name, actionIntent.component?.className)
+        assertEquals(MainActivity.ROUTE_SETTINGS, actionIntent.getStringExtra(MainActivity.EXTRA_ROUTE))
+        assertTrue(actionIntent.getBooleanExtra(MainActivity.EXTRA_START_UPDATE, false))
 
         val second = UpdateChecks.run(context, source, installedVersionCode = 1)
         assertTrue(second is UpdateDecision.AlreadySent)
         assertEquals(1, shadowManager.size())
-        assertEquals(42, UpdateChecks.savedUpdate(context, installedVersionCode = 1)!!.versionCode)
+        val saved = UpdateChecks.savedUpdate(context, installedVersionCode = 1)!!
+        assertEquals(42, saved.versionCode)
+        assertEquals(apkUrl, saved.apkUrl)
+        assertEquals("bungae-alert-v1.2.0-vc42.apk", saved.apkName)
+        assertEquals(sumsUrl, saved.checksumUrl)
     }
 
     @Test

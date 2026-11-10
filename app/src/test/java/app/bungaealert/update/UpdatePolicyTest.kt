@@ -20,6 +20,21 @@ class UpdatePolicyTest {
         assertEquals(found.htmlUrl, decision.htmlUrl)
         assertEquals(found.htmlUrl, decision.pageUrl)
         assertEquals("새 버전 v1.2.0 (42) 알림을 보냈습니다", decision.message)
+        assertEquals(null, decision.apkUrl)
+    }
+
+    @Test
+    fun keepsTheApkAddressOnTheUpdate() {
+        val withFile = found.copy(
+            apkUrl = "https://example.com/bungae-alert-v1.2.0-vc42.apk",
+            apkName = "bungae-alert-v1.2.0-vc42.apk",
+            checksumUrl = "https://example.com/SHA256SUMS",
+        )
+        val decision = UpdatePolicy.decide(withFile, installedVersionCode = 1, notifiedVersionCode = null, canNotify = true)
+        decision as UpdateDecision.Notify
+        assertEquals(withFile.apkUrl, decision.apkUrl)
+        assertEquals(withFile.apkName, decision.apkName)
+        assertEquals(withFile.checksumUrl, decision.checksumUrl)
     }
 
     @Test

@@ -11,6 +11,8 @@ object VersionCodes {
 
     fun isNewer(remote: Int, installed: Int): Boolean = remote > installed
 
+    fun isNewer(remote: Long, installed: Long): Boolean = remote > installed
+
     fun parse(body: String, assetNames: List<String>): Int? {
         bodyPattern.find(body)?.groupValues?.getOrNull(1)?.toIntOrNull()?.takeIf { it > 0 }?.let { return it }
         for (name in assetNames) {
