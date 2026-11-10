@@ -30,6 +30,34 @@ class ReleaseQueryTest {
         assertEquals("v1.4.0", release!!.tag)
         assertEquals(releaseUrl, release.htmlUrl)
         assertEquals(42, release.versionCode)
+        assertEquals("bungae-alert-v1.4.0-vc42.apk", release.apkName)
+        assertEquals(
+            "https://github.com/Gforce10-design/kakao-bungae-alert/releases/download/v1.4.0/bungae-alert-v1.4.0-vc42.apk",
+            release.apkUrl,
+        )
+        assertEquals("https://example.invalid/sums", release.checksumUrl)
+    }
+
+    @Test
+    fun picksTheApkWhoseVersionMatchesAndDropsUnsafeUrls() {
+        val json = """
+            {
+              "tag_name": "v1.4.0",
+              "html_url": "$releaseUrl",
+              "body": "versionCode: 42",
+              "assets": [
+                {"name": "bungae-alert-v1.0.0-vc7.apk", "browser_download_url": "https://example.com/old.apk"},
+                {"name": "notes.txt", "browser_download_url": "https://example.com/notes.txt"},
+                {"name": "bungae-alert-v1.4.0-vc42.apk", "browser_download_url": "https://example.com/new.apk"},
+                {"name": "SHA256SUMS", "browser_download_url": "http://example.com/SHA256SUMS"},
+                {"name": "other.apk", "browser_download_url": "https://user:pass@example.com/other.apk"}
+              ]
+            }
+        """.trimIndent()
+        val release = ReleaseJson.parse(json)!!
+        assertEquals("https://example.com/new.apk", release.apkUrl)
+        assertEquals("bungae-alert-v1.4.0-vc42.apk", release.apkName)
+        assertNull(release.checksumUrl)
     }
 
     @Test
@@ -55,7 +83,14 @@ class ReleaseQueryTest {
     @Test
     fun sourceMapsHttpResults() {
         assertEquals(
-            ReleaseQuery.Found("v1.4.0", releaseUrl, 42),
+            ReleaseQuery.Found(
+                tag = "v1.4.0",
+                htmlUrl = releaseUrl,
+                versionCode = 42,
+                apkUrl = "https://github.com/Gforce10-design/kakao-bungae-alert/releases/download/v1.4.0/bungae-alert-v1.4.0-vc42.apk",
+                apkName = "bungae-alert-v1.4.0-vc42.apk",
+                checksumUrl = "https://example.invalid/sums",
+            ),
             GithubReleaseSource { _, _ -> HttpResult(200, body, null) }.latest(),
         )
         assertEquals(ReleaseQuery.NotFound, GithubReleaseSource { _, _ -> HttpResult(404, "", null) }.latest())

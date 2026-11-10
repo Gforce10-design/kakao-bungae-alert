@@ -10,6 +10,9 @@ sealed interface UpdateDecision {
         val versionCode: Int,
         val htmlUrl: String,
         override val message: String,
+        val apkUrl: String? = null,
+        val apkName: String? = null,
+        val checksumUrl: String? = null,
     ) : UpdateDecision {
         override val pageUrl: String get() = htmlUrl
     }
@@ -21,6 +24,9 @@ sealed interface UpdateDecision {
         val versionCode: Int,
         val htmlUrl: String,
         override val message: String,
+        val apkUrl: String? = null,
+        val apkName: String? = null,
+        val checksumUrl: String? = null,
     ) : UpdateDecision {
         override val pageUrl: String get() = htmlUrl
     }
@@ -30,6 +36,9 @@ sealed interface UpdateDecision {
         val versionCode: Int,
         val htmlUrl: String,
         override val message: String,
+        val apkUrl: String? = null,
+        val apkName: String? = null,
+        val checksumUrl: String? = null,
     ) : UpdateDecision {
         override val pageUrl: String get() = htmlUrl
     }
@@ -75,6 +84,9 @@ object UpdatePolicy {
                 versionCode = query.versionCode,
                 htmlUrl = query.htmlUrl,
                 message = "새 버전 $label 알림을 이미 보냈습니다",
+                apkUrl = query.apkUrl,
+                apkName = query.apkName,
+                checksumUrl = query.checksumUrl,
             )
         }
         if (!canNotify) {
@@ -83,6 +95,9 @@ object UpdatePolicy {
                 versionCode = query.versionCode,
                 htmlUrl = query.htmlUrl,
                 message = "새 버전 ${label}가 있습니다. 알림 허용 후 다시 확인하세요",
+                apkUrl = query.apkUrl,
+                apkName = query.apkName,
+                checksumUrl = query.checksumUrl,
             )
         }
         return UpdateDecision.Notify(
@@ -90,6 +105,9 @@ object UpdatePolicy {
             versionCode = query.versionCode,
             htmlUrl = query.htmlUrl,
             message = "새 버전 $label 알림을 보냈습니다",
+            apkUrl = query.apkUrl,
+            apkName = query.apkName,
+            checksumUrl = query.checksumUrl,
         )
     }
 }

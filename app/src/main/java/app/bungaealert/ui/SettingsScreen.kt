@@ -23,12 +23,16 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowDownward
 import androidx.compose.material.icons.rounded.ArrowUpward
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -44,8 +48,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import android.widget.Toast
 import app.bungaealert.BuildConfig
 import app.bungaealert.BungaeApp
+import app.bungaealert.MainActivity
 import app.bungaealert.ai.ModelProvider
 import app.bungaealert.ai.ModelValidator
 import app.bungaealert.ai.NtfySubscribeService
@@ -62,7 +68,10 @@ import app.bungaealert.detect.TopicGenerator
 import app.bungaealert.notify.ListenerRuntime
 import app.bungaealert.update.SemanticVersion
 import app.bungaealert.update.UpdateChecks
+import app.bungaealert.update.UpdateController
+import app.bungaealert.update.UpdateCopy
 import app.bungaealert.update.UpdateDecision
+import app.bungaealert.update.UpdatePermissions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -110,6 +119,8 @@ data class SettingsModel(
     val versionCode: Int = 0,
     val updateMessage: String = "",
     val updateBusy: Boolean = false,
+    val installBusy: Boolean = false,
+    val updateProgress: Int? = null,
     val updateUrl: String = "",
     val feelSummary: String = "",
 )
@@ -162,6 +173,7 @@ data class SettingsActions(
     val onOpenAlarmFeel: () -> Unit = {},
     val onOpenHelp: () -> Unit = {},
     val onCheckUpdate: () -> Unit = {},
+    val onInstallUpdate: () -> Unit = {},
     val onOpenUpdate: () -> Unit = {},
 )
 
@@ -193,6 +205,7 @@ fun SettingsRoute(
     var status by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
     val savedUpdate = remember { UpdateChecks.savedUpdate(context) }
+    val install by UpdateController.state.collectAsState()
     var updateMessage by remember {
         mutableStateOf(
             if (savedUpdate == null) {
@@ -204,6 +217,45 @@ fun SettingsRoute(
     }
     var updateBusy by remember { mutableStateOf(false) }
     var updateUrl by remember { mutableStateOf(savedUpdate?.url.orEmpty()) }
+    var awaitingInstallPermission by rememberSaveable { mutableStateOf(false) }
+    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        if (!awaitingInstallPermission) return@rememberLauncherForActivityResult
+        awaitingInstallPermission = false
+        if (UpdatePermissions.allowed(context)) {
+            UpdateController.start(context)
+        } else {
+            UpdateController.show(UpdateCopy.ALLOW_DENIED)
+        }
+    }
+    val requestInstall: () -> Unit = {
+        if (!install.busy) {
+            if (!UpdatePermissions.allowed(context)) {
+                awaitingInstallPermission = true
+                UpdateController.show(UpdateCopy.ALLOW)
+                Toast.makeText(context, UpdateCopy.ALLOW, Toast.LENGTH_LONG).show()
+                val opened = try {
+                    permissionLauncher.launch(UpdatePermissions.unknownSources(context))
+                    true
+                } catch (_: Exception) {
+                    false
+                }
+                if (!opened) {
+                    awaitingInstallPermission = false
+                    UpdateController.show(UpdateCopy.ALLOW_SCREEN)
+                    Toast.makeText(context, UpdateCopy.ALLOW_SCREEN, Toast.LENGTH_LONG).show()
+                }
+            } else {
+                UpdateController.start(context)
+            }
+        }
+    }
+    val host = context as? MainActivity
+    val startUpdate = host?.pendingStartUpdate == true
+    LaunchedEffect(startUpdate) {
+        if (!startUpdate) return@LaunchedEffect
+        host.consumeStartUpdate()
+        requestInstall()
+    }
     val access = remember(tick) { Permissions.listenerEnabled(context) }
     val bound = remember(tick) { ListenerRuntime.bound }
     val samsung = remember(tick) { Permissions.isSamsung() }
@@ -244,8 +296,10 @@ fun SettingsRoute(
         samsung = samsung,
         appVersion = BuildConfig.VERSION_NAME,
         versionCode = BuildConfig.VERSION_CODE,
-        updateMessage = updateMessage,
+        updateMessage = if (install.message.isNotBlank()) install.message else updateMessage,
         updateBusy = updateBusy,
+        installBusy = install.busy,
+        updateProgress = install.progress,
         updateUrl = updateUrl,
         feelSummary = alertFeelSummary(settings.feel),
     )
@@ -387,8 +441,9 @@ fun SettingsRoute(
             onOpenAlarmFeel = onOpenAlarmFeel,
             onOpenHelp = onOpenHelp,
             onCheckUpdate = {
-                if (!updateBusy) {
+                if (!updateBusy && !install.busy) {
                     updateBusy = true
+                    UpdateController.dismiss()
                     scope.launch {
                         val result = withContext(Dispatchers.IO) { UpdateChecks.run(context) }
                         updateMessage = result.message
@@ -401,6 +456,7 @@ fun SettingsRoute(
                     }
                 }
             },
+            onInstallUpdate = requestInstall,
             onOpenUpdate = {
                 val url = updateUrl
                 if (url.startsWith("https://")) {
@@ -729,11 +785,29 @@ private fun UpdateBanner(model: SettingsModel, actions: SettingsActions) {
             text = if (model.updateBusy) "확인 중" else "업데이트 확인",
             onClick = actions.onCheckUpdate,
             modifier = Modifier.fillMaxWidth(),
-            enabled = !model.updateBusy,
+            enabled = !model.updateBusy && !model.installBusy,
         )
         if (model.updateUrl.isNotBlank()) {
             Spacer(Modifier.height(8.dp))
-            PrimaryButton("받으러 가기", actions.onOpenUpdate, Modifier.fillMaxWidth())
+            PrimaryButton(
+                text = "업데이트",
+                onClick = actions.onInstallUpdate,
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !model.updateBusy && !model.installBusy,
+            )
+            if (model.installBusy) {
+                Spacer(Modifier.height(8.dp))
+                if (model.updateProgress == null) {
+                    LinearProgressIndicator(Modifier.fillMaxWidth())
+                } else {
+                    LinearProgressIndicator(
+                        progress = { model.updateProgress.coerceIn(0, 100) / 100f },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
+            Spacer(Modifier.height(8.dp))
+            SecondaryButton("받으러 가기", actions.onOpenUpdate, Modifier.fillMaxWidth())
         }
     }
 }

@@ -23,12 +23,14 @@ fun RootScreen() {
     val nav = rememberNavController()
     val start = if (settings.onboardingDone) "home" else "onboarding"
     val route = nav.currentBackStackEntryAsState().value?.destination?.route
-    val activity = context as? android.app.Activity
-    LaunchedEffect(settings.onboardingDone) {
-        if (!settings.onboardingDone) return@LaunchedEffect
-        if (activity?.intent?.getStringExtra(MainActivity.EXTRA_ROUTE) != "status") return@LaunchedEffect
-        nav.navigate("status") { launchSingleTop = true }
-        activity.intent.removeExtra(MainActivity.EXTRA_ROUTE)
+    val host = context as? MainActivity
+    val pendingRoute = host?.pendingRoute
+    LaunchedEffect(settings.onboardingDone, pendingRoute) {
+        if (pendingRoute == null) return@LaunchedEffect
+        if (pendingRoute == MainActivity.ROUTE_STATUS && !settings.onboardingDone) return@LaunchedEffect
+        if (pendingRoute != MainActivity.ROUTE_STATUS && pendingRoute != MainActivity.ROUTE_SETTINGS) return@LaunchedEffect
+        nav.navigate(pendingRoute) { launchSingleTop = true }
+        host.consumeRoute()
     }
     BungaeScaffold(tab = tabFor(route), onTab = { nav.openTab(it) }) { padding ->
         NavHost(nav, startDestination = start, modifier = Modifier.padding(padding)) {

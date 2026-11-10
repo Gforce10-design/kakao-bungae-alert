@@ -6,10 +6,24 @@ import app.bungaealert.net.Http
 import app.bungaealert.net.HttpResult
 import org.json.JSONObject
 
-data class GithubRelease(val tag: String, val htmlUrl: String, val versionCode: Int?)
+data class GithubRelease(
+    val tag: String,
+    val htmlUrl: String,
+    val versionCode: Int?,
+    val apkName: String? = null,
+    val apkUrl: String? = null,
+    val checksumUrl: String? = null,
+)
 
 sealed interface ReleaseQuery {
-    data class Found(val tag: String, val htmlUrl: String, val versionCode: Int) : ReleaseQuery
+    data class Found(
+        val tag: String,
+        val htmlUrl: String,
+        val versionCode: Int,
+        val apkUrl: String? = null,
+        val apkName: String? = null,
+        val checksumUrl: String? = null,
+    ) : ReleaseQuery
     data object NotFound : ReleaseQuery
     data object Unauthorized : ReleaseQuery
     data object RateLimited : ReleaseQuery
@@ -41,18 +55,48 @@ object ReleaseJson {
         val url = json.optString("html_url").trim()
         if (tag.isEmpty() || url.isEmpty() || !url.startsWith("https://")) return null
         val notes = json.optString("body")
-        val names = assetNames(json)
-        return GithubRelease(tag, url, VersionCodes.parse(notes, names))
+        val links = ReleaseAssets.links(json)
+        val versionCode = VersionCodes.parse(notes, links.map { it.name })
+        val apk = ReleaseAssets.apk(links, versionCode)
+        val sums = ReleaseAssets.checksums(links)
+        return GithubRelease(
+            tag = tag,
+            htmlUrl = url,
+            versionCode = versionCode,
+            apkName = apk?.name,
+            apkUrl = apk?.url,
+            checksumUrl = sums?.url,
+        )
+    }
+}
+
+internal data class ReleaseLink(val name: String, val url: String)
+
+internal object ReleaseAssets {
+    fun links(json: JSONObject): List<ReleaseLink> {
+        val assets = json.optJSONArray("assets") ?: return emptyList()
+        val links = mutableListOf<ReleaseLink>()
+        for (index in 0 until assets.length()) {
+            val item = assets.optJSONObject(index) ?: continue
+            val name = item.optString("name").trim()
+            val url = item.optString("browser_download_url").trim()
+            if (name.isNotEmpty()) links += ReleaseLink(name, url)
+        }
+        return links
     }
 
-    private fun assetNames(json: JSONObject): List<String> {
-        val assets = json.optJSONArray("assets") ?: return emptyList()
-        val names = mutableListOf<String>()
-        for (index in 0 until assets.length()) {
-            val name = assets.optJSONObject(index)?.optString("name").orEmpty().trim()
-            if (name.isNotEmpty()) names += name
+    fun apk(links: List<ReleaseLink>, versionCode: Int?): ReleaseLink? {
+        val apks = links.filter { it.name.endsWith(".apk", ignoreCase = true) && HttpsOnly.accept(it.url) }
+        if (versionCode != null) {
+            apks.firstOrNull { link ->
+                link.name.startsWith("bungae-alert-") && VersionCodes.parse("", listOf(link.name)) == versionCode
+            }?.let { return it }
         }
-        return names
+        return apks.firstOrNull { it.name.startsWith("bungae-alert-") } ?: apks.firstOrNull()
+    }
+
+    fun checksums(links: List<ReleaseLink>): ReleaseLink? {
+        return links.firstOrNull { it.name == "SHA256SUMS" && HttpsOnly.accept(it.url) }
     }
 }
 
@@ -90,7 +134,14 @@ class GithubReleaseSource(
                 when {
                     parsed == null -> ReleaseQuery.Failed("bad json")
                     parsed.versionCode == null -> ReleaseQuery.Failed("versionCode missing")
-                    else -> ReleaseQuery.Found(parsed.tag, parsed.htmlUrl, parsed.versionCode)
+                    else -> ReleaseQuery.Found(
+                        tag = parsed.tag,
+                        htmlUrl = parsed.htmlUrl,
+                        versionCode = parsed.versionCode,
+                        apkUrl = parsed.apkUrl,
+                        apkName = parsed.apkName,
+                        checksumUrl = parsed.checksumUrl,
+                    )
                 }
             }
         }
