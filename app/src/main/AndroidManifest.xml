@@ -83,6 +83,16 @@
             android:theme="@style/Theme.Bungae.Alarm"
             android:turnScreenOn="true" />
 
+        <activity
+            android:name=".alert.OpenKakaoActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:noHistory="true"
+            android:showWhenLocked="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:turnScreenOn="true" />
+
         <service
             android:name=".notify.KakaoNotificationListener"
             android:exported="true"

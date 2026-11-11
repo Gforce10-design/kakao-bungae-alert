@@ -27,6 +27,7 @@ class AlarmActivity : ComponentActivity() {
                     WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON,
             )
         }
+        current = this
         val id = intent.getStringExtra(EXTRA_ID).orEmpty()
         val title = intent.getStringExtra(EXTRA_TITLE).orEmpty()
         val body = intent.getStringExtra(EXTRA_BODY).orEmpty()
@@ -37,10 +38,7 @@ class AlarmActivity : ComponentActivity() {
                     title = title,
                     body = body,
                     matchedWords = words,
-                    onOpen = {
-                        AlarmRingService.stop(this, id, openKakao = true)
-                        finish()
-                    },
+                    onOpen = { openKakaoAndStopAlarm(this@AlarmActivity, id) },
                     onClose = {
                         AlarmRingService.stop(this, id, openKakao = false)
                         finish()
@@ -50,11 +48,25 @@ class AlarmActivity : ComponentActivity() {
         }
     }
 
+    override fun onDestroy() {
+        if (current === this) current = null
+        super.onDestroy()
+    }
+
     companion object {
         const val EXTRA_ID = "id"
         const val EXTRA_TITLE = "title"
         const val EXTRA_BODY = "body"
         const val EXTRA_WORDS = "matchedWords"
         const val EXTRA_OPEN_ID = "openId"
+
+        private var current: AlarmActivity? = null
+
+        /** Closes the full-screen alarm when 카톡 열기 was tapped from the notification. */
+        fun dismiss(id: String) {
+            val activity = current ?: return
+            val showing = activity.intent?.getStringExtra(EXTRA_ID).orEmpty()
+            if (id.isEmpty() || showing.isEmpty() || showing == id) activity.finish()
+        }
     }
 }
