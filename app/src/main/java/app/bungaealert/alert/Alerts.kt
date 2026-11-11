@@ -1,5 +1,7 @@
 package app.bungaealert.alert
 
+import android.app.Activity
+import android.app.ActivityOptions
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -19,6 +21,7 @@ import app.bungaealert.BungaeApp
 import app.bungaealert.MainActivity
 import app.bungaealert.R
 import app.bungaealert.detect.AlertMode
+import app.bungaealert.detect.KakaoPackages
 import app.bungaealert.detect.MatchedWords
 import app.bungaealert.detect.PostType
 import kotlinx.coroutines.CoroutineScope
@@ -31,25 +34,72 @@ import kotlinx.coroutines.launch
 import java.util.concurrent.ConcurrentHashMap
 
 object KakaoOpener {
+    private const val TAG = "KakaoOpener"
     private val intents = ConcurrentHashMap<String, PendingIntent>()
 
     fun remember(id: String, intent: PendingIntent?) {
         if (intent != null) intents[id] = intent
     }
 
+    /**
+     * Opens the remembered KakaoTalk notification content intent for [id].
+     * If that send fails, launches the KakaoTalk app. Call this from a foreground [Activity].
+     * A service has no background-activity exemption, so the same call from [AlarmRingService]
+     * is blocked and the button looks dead.
+     */
     fun open(context: Context, id: String) {
         val pending = intents.remove(id)
         if (pending != null) {
             try {
-                pending.send()
+                send(context, pending)
                 return
-            } catch (_: Exception) {
+            } catch (t: Exception) {
+                Log.w(TAG, "KakaoTalk content intent failed for $id", t)
             }
         }
-        val launch = context.packageManager.getLaunchIntentForPackage("com.kakao.talk") ?: return
+        val launch = context.packageManager.getLaunchIntentForPackage(KakaoPackages.KAKAO_TALK)
+        if (launch == null) {
+            Log.w(TAG, "KakaoTalk launch intent missing for $id")
+            return
+        }
         launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        context.startActivity(launch)
+        try {
+            context.startActivity(launch)
+        } catch (t: Exception) {
+            Log.w(TAG, "KakaoTalk launch failed for $id", t)
+        }
     }
+
+    private fun send(context: Context, pending: PendingIntent) {
+        val options = backgroundStartOptions(context)
+        if (options != null) {
+            pending.send(context, 0, null, null, null, null, options.toBundle())
+        } else {
+            pending.send()
+        }
+    }
+
+    /**
+     * On API 34+ the sender must opt in or the system drops the other app's activity start.
+     * Only an [Activity] has a token worth granting; a service call stays on the plain send path.
+     */
+    internal fun backgroundStartOptions(context: Context): ActivityOptions? {
+        if (Build.VERSION.SDK_INT < 34 || context !is Activity) return null
+        return ActivityOptions.makeBasic().apply {
+            @Suppress("DEPRECATION")
+            setPendingIntentBackgroundActivityStartMode(
+                ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED,
+            )
+        }
+    }
+}
+
+/** Opens KakaoTalk while [activity] is still in front, then stops the alarm without opening again. */
+internal fun openKakaoAndStopAlarm(activity: Activity, id: String) {
+    KakaoOpener.open(activity, id)
+    AlarmRingService.stop(activity, id, openKakao = false)
+    AlarmActivity.dismiss(id)
+    activity.finish()
 }
 
 object AlertChannels {
@@ -165,10 +215,9 @@ class AlarmRingService : Service() {
                     startForeground(NOTIF_ID, placeholder)
                 }
             }
-            val open = intent.getBooleanExtra(EXTRA_OPEN, false)
-            val id = intent.getStringExtra(AlarmActivity.EXTRA_ID).orEmpty()
             stopRinging()
-            if (open && id.isNotEmpty()) KakaoOpener.open(this, id)
+            // KakaoTalk is opened by AlarmActivity or OpenKakaoActivity before this stop.
+            // Starting it here is a background activity launch and is blocked.
             stopForeground(STOP_FOREGROUND_REMOVE)
             stopSelf()
             return START_NOT_STICKY
@@ -233,7 +282,7 @@ class AlarmRingService : Service() {
         feedback.stop()
     }
 
-    private fun alarmNotification(id: String, title: String, body: String, words: List<String> = emptyList()): Notification {
+    internal fun alarmNotification(id: String, title: String, body: String, words: List<String> = emptyList()): Notification {
         val activity = PendingIntent.getActivity(
             this,
             1,
@@ -246,13 +295,12 @@ class AlarmRingService : Service() {
             },
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
-        val stop = PendingIntent.getService(
+        val openChat = PendingIntent.getActivity(
             this,
             2,
-            Intent(this, AlarmRingService::class.java).apply {
-                action = ACTION_STOP
+            Intent(this, OpenKakaoActivity::class.java).apply {
                 putExtra(AlarmActivity.EXTRA_ID, id)
-                putExtra(EXTRA_OPEN, true)
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             },
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
@@ -267,7 +315,7 @@ class AlarmRingService : Service() {
             .setSilent(true)
             .setFullScreenIntent(activity, true)
             .setContentIntent(activity)
-            .addAction(0, "카톡 열기", stop)
+            .addAction(0, "카톡 열기", openChat)
             .build()
     }
 
@@ -315,7 +363,7 @@ class AlarmRingService : Service() {
 class AlarmStopReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val id = intent.getStringExtra(AlarmActivity.EXTRA_ID).orEmpty()
-        AlarmRingService.stop(context, id, intent.getBooleanExtra(AlarmRingService.EXTRA_OPEN, true))
+        AlarmRingService.stop(context, id, openKakao = false)
     }
 }
 
