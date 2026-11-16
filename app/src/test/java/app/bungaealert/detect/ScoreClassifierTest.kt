@@ -65,6 +65,57 @@ class ScoreClassifierTest {
     }
 
     @Test
+    fun vacancyFcfsSignupScoresAsMeetup() {
+        // Real S25 miss 2026-11-16, room 11월의 이야기: v0.2.1 logged 30점, no alert.
+        val samples = listOf(
+            "12/12 모임 못오시는 분이 생겨서 1분 선착순 갠톡으로 신청 받을게요!",
+            "12/12 모임 취소하신 분이 생겨서 선착순으로 신청 받습니다",
+            "내일 모임 한 자리 비어서 갠톡으로 신청 받을게요 선착순",
+        )
+        samples.forEach { text ->
+            val score = ScoreClassifier.score(text)
+            assertTrue("$text -> $score", score.meetup >= 70)
+            assertTrue(text, score.meetup > score.giveaway)
+            assertFalse(score.mediaOrEmpty)
+        }
+    }
+
+    @Test
+    fun cannotAttendIsNotAnAttendInvite() {
+        val score = ScoreClassifier.score("12/12 모임 못오시는 분이 생겨서 1분 선착순 갠톡으로 신청 받을게요!")
+        assertFalse(
+            "못오시는 분 must not count as 참석 권유: ${score.reasons}",
+            score.reasons.any { it.contains("참석 권유") },
+        )
+        listOf("못 오시는 분", "안 계신 분 있나요").forEach { text ->
+            val s = ScoreClassifier.score(text)
+            assertFalse("$text: ${s.reasons}", s.reasons.any { it.contains("참석 권유") })
+        }
+        assertTrue(ScoreClassifier.score("내일 오실 분").reasons.any { it.contains("참석 권유") })
+    }
+
+    @Test
+    fun moimAndAbsenceWithoutRecruitStayLow() {
+        val samples = listOf(
+            "다음 모임 언제 해요?",
+            "이번 주 모임 재밌겠다",
+            "모임 사진 올려주세요",
+            "12/12 모임 못오시는 분 많네요",
+            "모임 못오시는 분들 너무 아쉬워요",
+            "못오시는 분 누구예요?",
+            "어제 모임 못오신 분 자리 신청 받았어요",
+            "모임 신청 받았어?",
+            "12/12 모임 못 오시는 분 손들어 주세요",
+            "모임 취소된 거 맞아요?",
+        )
+        samples.forEach { text ->
+            val score = ScoreClassifier.score(text)
+            assertTrue("$text -> meetup=${score.meetup} give=${score.giveaway} ${score.reasons}", score.meetup < 40)
+            assertTrue(text, score.giveaway < 40)
+        }
+    }
+
+    @Test
     fun mediaAndEmptyDoNotScore() {
         listOf("", "   ", "사진", "이모티콘", "동영상", "(이모티콘)", "사진을 보냈습니다", "삭제된 메시지입니다").forEach { text ->
             val score = ScoreClassifier.score(text)
