@@ -27,8 +27,12 @@ object ScoreClassifier {
     private val notStation = setOf("번역", "지역", "영역", "세력", "폭력")
     private val headcount = Regex("(?:선착순\\s*)?\\d{1,2}\\s*명")
     private val peopleReceiving = Regex("\\d{1,3}\\s*분께")
-    private val recruitPhrase = Regex("모집|구합니다|구함|모십니다")
-    private val attendPhrase = Regex("참석\\s*가능|가능하신\\s*분|가능하신분|오실\\s*분|오시는\\s*분|하실\\s*분|계실\\s*분|계신\\s*분")
+    private val recruitPhrase = Regex("모집|구합니다|구함|모십니다|신청\\s*받")
+    // "못 오시는 분" / "안 계신 분" are absences, not an RSVP invite.
+    private val attendPhrase = Regex("참석\\s*가능|가능하신\\s*분|가능하신분|(?<![못안]\\s?)(?:오실|오시는|하실|계실|계신)\\s*분")
+    // A seat opened up (someone dropped out). Scored only next to an apply signal.
+    private val vacancy = Regex("못\\s*오시는\\s*분|못\\s*오신\\s*분|못\\s*오게\\s*된\\s*분|빈\\s*자리|한\\s*자리\\s*(?:비|났|남)|자리가?\\s*(?:비었|비어|났|생겼)|취소(?:하신|한|된)\\s*분|빠지신\\s*분|빠진\\s*분|추가\\s*모집")
+    private val applyChannel = Regex("갠톡|개인톡|갠톡으로|1:1\\s*톡|개톡")
     private val giftWord = Regex("기프티콘|기프트콘|기프티")
     private val giveVerb = Regex("드려요|드립니다|나눔|나눠|선물합니다|선물해|쏠게|쏘겠|쏩니다")
     private val goods = Regex("상품권|쿠폰|아메리카노")
@@ -53,7 +57,19 @@ object ScoreClassifier {
             Regex("번개모임|번개 모임").containsMatchIn(text) -> meetupHits += "번개모임" to 36
             Regex("번개").containsMatchIn(text) && !text.contains("번개장터") -> meetupHits += "번개" to 28
         }
-        if (recruitPhrase.containsMatchIn(text)) meetupHits += "모집 표현" to 16
+        val hasRecruit = recruitPhrase.containsMatchIn(text)
+        if (hasRecruit) meetupHits += "모집 표현" to 16
+        val hasFcfs = text.contains("선착순")
+        val applySignal = hasRecruit || hasFcfs || text.contains("신청") ||
+            applyChannel.containsMatchIn(text) || attendPhrase.containsMatchIn(text)
+        val hasVacancy = applySignal && vacancy.containsMatchIn(text)
+        if (hasVacancy) meetupHits += "빈자리 모집" to 16
+        val hasDate = date.containsMatchIn(text)
+        if (meetupHits.none { it.first == "번개" || it.first == "번개모임" } && text.contains("모임") &&
+            (hasDate || time.containsMatchIn(text) || hasFcfs || text.contains("신청") || hasVacancy)
+        ) {
+            meetupHits += "모임 일정·신청" to 16
+        }
         if (attendPhrase.containsMatchIn(text)) {
             meetupHits += "참석 권유" to 18
         } else if (text.contains("참석")) {
@@ -71,6 +87,13 @@ object ScoreClassifier {
         if (goods.containsMatchIn(text)) giveHits += "상품·쿠폰" to 8
 
         val giveAnchor = giveHits.any { it.first == "기프티콘" || it.first == "나눔·증정" || it.first == "n분께" }
+        val meetupContext = meetupHits.any {
+            it.first in setOf("번개", "번개모임", "모임 일정·신청", "모집 표현", "빈자리 모집")
+        }
+        if (hasFcfs && meetupContext && !giveAnchor) meetupHits += "선착순 신청" to 12
+        if (applyChannel.containsMatchIn(text) && (hasRecruit || hasVacancy) && !giveAnchor) {
+            meetupHits += "갠톡 신청" to 6
+        }
         if (text.contains("선착순") && giveAnchor) giveHits += "선착순 나눔" to 12
         if (headcount.containsMatchIn(text) && (giveAnchor || text.contains("선착순"))) {
             giveHits += "나눔 인원" to 14
@@ -89,7 +112,7 @@ object ScoreClassifier {
             penalty += 26
             negatives += "지난 일정·회고"
         }
-        val strongIntent = meetupHits.any { it.first in setOf("모집 표현", "참석 권유", "인원") } ||
+        val strongIntent = meetupHits.any { it.first in setOf("모집 표현", "참석 권유", "인원", "빈자리 모집") } ||
             (meetupHits.any { it.first == "번개" || it.first == "번개모임" } &&
                 meetupHits.any { it.first == "날짜" || it.first == "시간" || it.first == "장소" }) ||
             giveAnchor
