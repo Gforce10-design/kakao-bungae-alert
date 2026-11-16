@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="app.bungaealert.detect.ScoreClassifierTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-11-16T12:07:58.741Z" hostname="grok-bot-vm-526152594" time="0.012">
+  <properties/>
+  <testcase name="timeInsideBodyIsNotAFalseSenderSplit" classname="app.bungaealert.detect.ScoreClassifierTest" time="0.0"/>
+  <testcase name="meetupRecruitmentScoresHigh" classname="app.bungaealert.detect.ScoreClassifierTest" time="0.003"/>
+  <testcase name="cannotAttendIsNotAnAttendInvite" classname="app.bungaealert.detect.ScoreClassifierTest" time="0.001"/>
+  <testcase name="moimAndAbsenceWithoutRecruitStayLow" classname="app.bungaealert.detect.ScoreClassifierTest" time="0.003"/>
+  <testcase name="vacancyFcfsSignupScoresAsMeetup" classname="app.bungaealert.detect.ScoreClassifierTest" time="0.001"/>
+  <testcase name="giveawayScoresHigh" classname="app.bungaealert.detect.ScoreClassifierTest" time="0.002"/>
+  <testcase name="mediaAndEmptyDoNotScore" classname="app.bungaealert.detect.ScoreClassifierTest" time="0.0"/>
+  <testcase name="casualAndRepliesStayLow" classname="app.bungaealert.detect.ScoreClassifierTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

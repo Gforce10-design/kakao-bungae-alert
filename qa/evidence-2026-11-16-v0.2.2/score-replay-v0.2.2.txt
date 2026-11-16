@@ -1,0 +1,120 @@
+ScoreClassifier replay via compiled classes.jar (commit 3a3febb source tree)
+Sensitivity.cutoff(40)=62 cutoff(100)=35
+[TARGET] FLAG>=62
+  text (paraphrased for the public repo; scores from the original): 12/12 모임 못오시는 분이 있어서 선착순 갠톡으로 신청 받겠습니다
+  meetup=78 giveaway=18 best=78 media=false
+  reasons: 모임 +16 모집 표현 · 모임 +16 빈자리 모집 · 모임 +16 모임 일정·신청 · 모임 +12 날짜 · 모임 +12 선착순 신청 · 모임 +6 갠톡 신청 · 나눔 +18 선착순
+  default_cutoff=62 max_cutoff=35
+[VARIANT-cancel] FLAG>=62
+  text: 12/12 모임 취소하신 분이 생겨서 선착순으로 신청 받습니다
+  meetup=72 giveaway=18 best=72 media=false
+  reasons: 모임 +16 모집 표현 · 모임 +16 빈자리 모집 · 모임 +16 모임 일정·신청 · 모임 +12 날짜 · 모임 +12 선착순 신청 · 나눔 +18 선착순
+  default_cutoff=62 max_cutoff=35
+[VARIANT-seat] FLAG>=62
+  text: 내일 모임 한 자리 비어서 갠톡으로 신청 받을게요 선착순
+  meetup=78 giveaway=18 best=78 media=false
+  reasons: 모임 +16 모집 표현 · 모임 +16 빈자리 모집 · 모임 +16 모임 일정·신청 · 모임 +12 날짜 · 모임 +12 선착순 신청 · 모임 +6 갠톡 신청 · 나눔 +18 선착순
+  default_cutoff=62 max_cutoff=35
+[CONTROL-bungae80] FLAG>=62
+  text: 오늘 7시 강남 번개 3명 모여요
+  meetup=80 giveaway=0 best=80 media=false
+  reasons: 모임 +28 번개 · 모임 +16 인원 · 모임 +12 날짜 · 모임 +12 시간 · 모임 +12 장소
+  default_cutoff=62 max_cutoff=35
+[CONTROL-giveaway] FLAG>=62
+  text: 스타벅스 아메리카노 기프티콘 선착순 3분께 드려요! 댓글 달아주세요
+  meetup=0 giveaway=100 best=100 media=false
+  reasons: 나눔 +38 기프티콘 · 나눔 +20 나눔·증정 · 나눔 +18 선착순 · 나눔 +18 n분께 · 나눔 +8 상품·쿠폰 · 나눔 +12 선착순 나눔 · 나눔 +6 댓글 유도
+  default_cutoff=62 max_cutoff=35
+[NEG-dates-available]
+  text: 13,16,20,23일 빼고 다가능
+  meetup=0 giveaway=0 best=0 media=false
+  reasons: 해당하는 신호 없음
+  default_cutoff=62 max_cutoff=35
+[NEG-reply]
+  text: 저요
+  meetup=0 giveaway=0 best=0 media=false
+  reasons: 참고: 짧은 참여 대답
+  default_cutoff=62 max_cutoff=35
+[NEG-past-fun]
+  text: 어제 모임 재밌었어요
+  meetup=0 giveaway=0 best=0 media=false
+  reasons: 감점 -26 · 참고: 지난 일정·회고
+  default_cutoff=62 max_cutoff=35
+[NEG-cannot-ask]
+  text: 못 오시는 분 있으면 말해주세요?
+  meetup=0 giveaway=0 best=0 media=false
+  reasons: 감점 -16 · 참고: 질문
+  default_cutoff=62 max_cutoff=35
+[NEG-casual-moim-when]
+  text: 다음 모임 언제 해요?
+  meetup=0 giveaway=0 best=0 media=false
+  reasons: 감점 -16 · 참고: 질문
+  default_cutoff=62 max_cutoff=35
+[NEG-casual-moim-fun]
+  text: 이번 주 모임 재밌겠다
+  meetup=28 giveaway=0 best=28 media=false
+  reasons: 모임 +16 모임 일정·신청 · 모임 +12 날짜
+  default_cutoff=62 max_cutoff=35
+[NEG-casual-photo]
+  text: 모임 사진 올려주세요
+  meetup=0 giveaway=0 best=0 media=false
+  reasons: 해당하는 신호 없음
+  default_cutoff=62 max_cutoff=35
+[NEG-absence-many]
+  text: 12/12 모임 못오시는 분 많네요
+  meetup=28 giveaway=0 best=28 media=false
+  reasons: 모임 +16 모임 일정·신청 · 모임 +12 날짜
+  default_cutoff=62 max_cutoff=35
+[NEG-absence-sad]
+  text: 모임 못오시는 분들 너무 아쉬워요
+  meetup=0 giveaway=0 best=0 media=false
+  reasons: 해당하는 신호 없음
+  default_cutoff=62 max_cutoff=35
+[NEG-who]
+  text: 못오시는 분 누구예요?
+  meetup=0 giveaway=0 best=0 media=false
+  reasons: 감점 -20 · 참고: 확인 질문
+  default_cutoff=62 max_cutoff=35
+[NEG-past-applied]
+  text: 어제 모임 못오신 분 자리 신청 받았어요
+  meetup=2 giveaway=0 best=2 media=false
+  reasons: 모임 +16 모집 표현 · 모임 +16 빈자리 모집 · 모임 +16 모임 일정·신청 · 감점 -46 · 참고: 지난 일정·회고 · 참고: 확인 질문
+  default_cutoff=62 max_cutoff=35
+[NEG-asked]
+  text: 모임 신청 받았어?
+  meetup=12 giveaway=0 best=12 media=false
+  reasons: 모임 +16 모집 표현 · 모임 +16 모임 일정·신청 · 감점 -20 · 참고: 확인 질문
+  default_cutoff=62 max_cutoff=35
+[NEG-raise-hand]
+  text: 12/12 모임 못 오시는 분 손들어 주세요
+  meetup=28 giveaway=0 best=28 media=false
+  reasons: 모임 +16 모임 일정·신청 · 모임 +12 날짜
+  default_cutoff=62 max_cutoff=35
+[NEG-cancel-q]
+  text: 모임 취소된 거 맞아요?
+  meetup=0 giveaway=0 best=0 media=false
+  reasons: 감점 -16 · 참고: 질문
+  default_cutoff=62 max_cutoff=35
+[NEG-cancel-casual]
+  text: 모임 취소됐어요
+  meetup=0 giveaway=0 best=0 media=false
+  reasons: 해당하는 신호 없음
+  default_cutoff=62 max_cutoff=35
+[NEG-empty-seat-casual]
+  text: 빈자리 있네요
+  meetup=0 giveaway=0 best=0 media=false
+  reasons: 해당하는 신호 없음
+  default_cutoff=62 max_cutoff=35
+[NEG-today-weather]
+  text: 오늘 날씨 좋다
+  meetup=12 giveaway=0 best=12 media=false
+  reasons: 모임 +12 날짜
+  default_cutoff=62 max_cutoff=35
+[NEG-seonchak-q]
+  text: 선착순이야?
+  meetup=0 giveaway=2 best=2 media=false
+  reasons: 나눔 +18 선착순 · 감점 -16 · 참고: 질문
+  default_cutoff=62 max_cutoff=35
+
+[CONTROL-giveaway72] (편의점 상품권 나눔합니다 선착순 5명)
+meetup=16 giveaway=72  모임 +16 인원 · 나눔 +20 나눔·증정 · 나눔 +18 선착순 · 나눔 +8 상품·쿠폰 · 나눔 +12 선착순 나눔 · 나눔 +14 나눔 인원

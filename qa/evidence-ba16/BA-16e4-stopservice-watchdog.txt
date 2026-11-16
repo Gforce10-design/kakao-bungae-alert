@@ -1,0 +1,37 @@
+## explicit stop: am stopservice (no judge afterwards)
+Stopping service: Intent { act=android.intent.action.MAIN cat=[android.intent.category.LAUNCHER] cmp=app.bungaealert/.ai.NtfySubscribeService }
+14:27:30.810 stopservice issued
+14:27:36 after 6s: rc=1 
+0
+14:27:58 before force: ntfySvc=0  (watchdog not yet observed naturally; jobs 31/32 had ~5 min left)
+Could not find job 31 in package app.bungaealert / user 0
+14:28:08 after forcing job 31: ntfySvc=0
+Could not find job 32 in package app.bungaealert / user 0
+14:28:18 after forcing job 32: ntfySvc=0
+Running job [FORCED]
+14:28:35 after forcing job 31: ntfySvc=0
+Running job [FORCED]
+14:28:47 after forcing job 32: ntfySvc=0
+14:31:24 ntfySvc=0
+14:31:37 ntfySvc=0
+14:31:50 ntfySvc=0
+14:32:03 ntfySvc=0
+14:32:16 ntfySvc=0
+14:32:28 ntfySvc=0
+14:32:41 ntfySvc=0
+14:32:54 ntfySvc=0
+14:33:07 ntfySvc=1
+  * ServiceRecord{42ebd5f u0 app.bungaealert/.ai.NtfySubscribeService}
+    intent={cmp=app.bungaealert/.ai.NtfySubscribeService}
+    packageName=app.bungaealert
+--
+    infoAllowStartForeground=[callingPackage: app.bungaealert; callingUid: 10197; uidState: FGS ; ui
+    isForeground=true foregroundId=42 types=40000000 foregroundNoti=Notification(channel=bungae_ntfy
+## verify stream works after watchdog restart, then judge-restart test
+번개 모집 오늘 10시 | alerted True | ok_webhook 일치: SIMULATED verdict from mock webhook
+Service stopped
+14:33:37 stopped: svc=0
+14:33:54 after next judge: svc=1
+webhook_post 14:33:39.727 rid= 5a388dab-650d-41bc-815a-9c04f6757864 None
+ntfy_publish 14:33:39.776 rid= 5a388dab-650d-41bc-815a-9c04f6757864 200
+번개 모집 오늘 9시 반 | score 68 | alerted True | ok_webhook 일치: SIMULATED verdict from mock webhook

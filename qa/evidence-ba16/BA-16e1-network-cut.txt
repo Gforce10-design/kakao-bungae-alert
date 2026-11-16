@@ -1,0 +1,12 @@
+# (e1) network cut/restore, emulator-5558, times box KST
+14:19:16.459 baseline conns(remote hex:port):
+010012C6:01BB
+14:19:19.241 svc data+wifi disabled
+14:19:27.244 +8s conns:
+010012C6:01BB
+0
+14:19:50.372 +30s conns:
+010012C6:01BB
+14:19:51.816 svc data enabled (restore)
+14:19:56.213 poll 1 :443 conns=1
+번개 모집 오늘 1시 | score 68 | alerted True | ok_webhook 일치: SIMULATED verdict from mock webhook

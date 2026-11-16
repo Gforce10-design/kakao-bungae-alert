@@ -1,0 +1,9 @@
+# 2026-11-05 12:25:35 KST snapshot for BA-01-pre-other-pkg (build 0.0.1-test2 vc2, app uid 10197)
+## app.bungaealert active notifications
+    pkg=app.bungaealert user=UserHandle{0} id=48 tag=null importance=2 Notification(channel=bungae_listener shortcut=null contentView=null vibrate=null sound=null defaults=0x0 flags=0x62 color=0x00000000 category=status groupKey=s
+                android.title=String (카카오톡 알림 감시)
+                android.text=String (감시 중입니다. 연결 여부는 앱의 연결 화면에서 확인하세요.)
+## detections.json (root read, summarized)
+none/err Expecting value: line 1 column 1 (char 0)
+## iptables owner-uid counter QA_BA (uid 10197)
+       0        0 RETURN     all  --  *      *       0.0.0.0/0            0.0.0.0/0           

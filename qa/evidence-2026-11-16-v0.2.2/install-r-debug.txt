@@ -1,0 +1,7 @@
+Performing Streamed Install
+Success
+    versionCode=6 minSdk=26 targetSdk=37
+    versionName=0.2.2
+    flags=[ DEBUGGABLE HAS_CODE ALLOW_CLEAR_USER_DATA ]
+    signatures=PackageSignatures{1c2bfad version:2, signatures:[871adeb2], past signatures:[]}
+    pkgFlags=[ DEBUGGABLE HAS_CODE ALLOW_CLEAR_USER_DATA ]

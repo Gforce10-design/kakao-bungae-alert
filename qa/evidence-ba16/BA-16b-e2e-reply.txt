@@ -1,0 +1,28 @@
+# BA-16 (b) end-to-end, SIMULATED mock webhook (box 10.0.2.2:18080), simulated Kakao notification from stub com.kakao.talk
+# Run 1: simulated Grok think time 0 s
+clock_offset_box_minus_emu=1.327 (adb round trip 0.405)
+post_cmd_start=1793855684.6586375 post_cmd_end=1793855685.68655
+webhook_post ts=1793855686.578 {'auth_ok': True, 'fields': ['chatName', 'postTypes', 'replyServer', 'replyTopic', 'requestId', 'score', 'sender', 'text'], 'rid': '9b47da7a-fba1-440d-8ee1-43076a0aab55', 'score': 68, 'mode': 'reply'}
+ntfy_publish ts=1793855686.627 {'rid': '9b47da7a-fba1-440d-8ee1-43076a0aab55', 'mode': 'reply', 'status': 200, 'sent_id': '9b47da7a-fba1-440d-8ee1-43076a0aab55', 'took': 0.05}
+# Run 2: simulated Grok think time 3 s
+clock_offset_box_minus_emu=1.296 (adb round trip 0.483)
+post_cmd_start=1793855726.7678604 post_cmd_end=1793855727.776303
+webhook_post ts=1793855728.411 {'auth_ok': True, 'fields': ['chatName', 'postTypes', 'replyServer', 'replyTopic', 'requestId', 'score', 'sender', 'text'], 'rid': 'f61cade1-a9bb-447f-8b66-c984b080dc60', 'score': 68, 'mode': 'reply'}
+ntfy_publish ts=1793855731.467 {'rid': 'f61cade1-a9bb-447f-8b66-c984b080dc60', 'mode': 'reply', 'status': 200, 'sent_id': 'f61cade1-a9bb-447f-8b66-c984b080dc60', 'took': 0.06}
+
+# Timeline (box clock, emu clock + ~1.3 s offset; +-0.25 s uncertainty)
+Run1: stub notif posted 685.30 -> webhook POST received 686.58 -> ntfy publish done 686.63 -> BA alert when=686.80  => total ~1.5 s
+Run2: stub notif posted 727.41 -> webhook POST received 728.41 (+1.0 s) -> mock waited 3 s -> ntfy publish done 731.47 -> BA alert when=731.72 (+0.25 s after publish) => total ~4.3 s
+# detections.json newest 3 (verdict summary):
+번개 모집 오늘 5시 | score 68 | alerted True meetup | 모임 +28 번개 · 모임 +16 모집 표현 · 모임 +12 날짜 · 모임 +12 시간 · 보조판정 grok_webhook 일치: SIMULATED verdict from mock webhook
+번개 모집 오늘 6시 | score 68 | alerted True meetup | 모임 +28 번개 · 모임 +16 모집 표현 · 모임 +12 날짜 · 모임 +12 시간 · 보조판정 grok_webhook 일치: SIMULATED verdict from mock webhook
+번개 모집 오늘 8시 | score 68 | alerted True meetup | 모임 +28 번개 · 모임 +16 모집 표현 · 모임 +12 날짜 · 모임 +12 시간 · 보조판정 grok_webhook 일치: SIMULATED verdict from mock webhook
+# alert notifications present (title/text):
+                android.title=String (번개모임 · 수다방)
+                android.text=String (번개 모집 오늘 5시)
+                android.title=String (번개모임 · 수다방)
+                android.text=String (번개 모집 오늘 6시)
+                android.title=String (번개모임 · 수다방)
+                android.text=String (번개 모집 오늘 8시)
+                android.title=String (번개모임 · 수다방)
+                android.text=String (번개 모집 오늘 7시)

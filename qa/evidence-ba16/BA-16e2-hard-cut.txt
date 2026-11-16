@@ -1,0 +1,75 @@
+# (e2) hard cut: iptables DROP for app uid (chain QA_BA) for 100 s (> 90 s okhttp read timeout), then restore. st: 01=ESTAB 06=TIME_WAIT 02=SYN_SENT; local:port remote:port hex
+14:20:55.640 baseline:
+01 0F02000A:9684 010012C6:01BB
+14:20:56.804 DROP inserted
+14:21:11.807 +15s:
+01 0F02000A:9684 010012C6:01BB
+14:21:27.672 +30s:
+01 0F02000A:9684 010012C6:01BB
+14:21:43.111 +45s:
+01 0F02000A:9684 010012C6:01BB
+14:21:58.613 +60s:
+01 0F02000A:9684 010012C6:01BB
+14:22:14.100 +75s:
+01 0F02000A:9684 010012C6:01BB
+14:22:29.536 +90s:
+01 0F02000A:9684 010012C6:01BB
+14:22:45.332 +105s:
+02 0F02000A:A7AA 010012C6:01BB
+Chain QA_BA (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+   81  8178 RETURN     all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+14:22:46.532 DROP removed
+14:22:50.536 post-restore poll 1:
+01 0F02000A:A7AA 010012C6:01BB
+14:22:54.989 post-restore poll 2:
+01 0F02000A:A7AA 010012C6:01BB
+14:22:59.428 post-restore poll 3:
+01 0F02000A:A7AA 010012C6:01BB
+14:23:04.079 post-restore poll 4:
+01 0F02000A:A7AA 010012C6:01BB
+14:23:08.905 post-restore poll 5:
+01 0F02000A:A7AA 010012C6:01BB
+14:23:13.539 post-restore poll 6:
+01 0F02000A:A7AA 010012C6:01BB
+14:23:17.968 post-restore poll 7:
+01 0F02000A:A7AA 010012C6:01BB
+14:23:22.375 post-restore poll 8:
+01 0F02000A:A7AA 010012C6:01BB
+14:23:26.832 post-restore poll 9:
+01 0F02000A:A7AA 010012C6:01BB
+14:23:31.261 post-restore poll 10:
+01 0F02000A:A7AA 010012C6:01BB
+14:23:35.612 post-restore poll 11:
+01 0F02000A:A7AA 010012C6:01BB
+14:23:40.029 post-restore poll 12:
+01 0F02000A:A7AA 010012C6:01BB
+14:23:44.424 post-restore poll 13:
+01 0F02000A:A7AA 010012C6:01BB
+14:23:48.838 post-restore poll 14:
+01 0F02000A:A7AA 010012C6:01BB
+14:23:53.169 post-restore poll 15:
+01 0F02000A:A7AA 010012C6:01BB
+14:23:57.591 post-restore poll 16:
+01 0F02000A:A7AA 010012C6:01BB
+14:24:02.882 post-restore poll 17:
+01 0F02000A:A7AA 010012C6:01BB
+14:24:07.276 post-restore poll 18:
+01 0F02000A:A7AA 010012C6:01BB
+14:24:11.837 post-restore poll 19:
+01 0F02000A:A7AA 010012C6:01BB
+14:24:16.594 post-restore poll 20:
+01 0F02000A:A7AA 010012C6:01BB
+14:24:21.310 post-restore poll 21:
+01 0F02000A:A7AA 010012C6:01BB
+14:24:25.780 post-restore poll 22:
+01 0F02000A:A7AA 010012C6:01BB
+14:24:30.416 post-restore poll 23:
+01 0F02000A:A7AA 010012C6:01BB
+14:24:34.835 post-restore poll 24:
+01 0F02000A:A7AA 010012C6:01BB
+14:24:39.317 post-restore poll 25:
+01 0F02000A:A7AA 010012C6:01BB
+webhook_post 14:24:49.411 rid= ed1e3144-26eb-437c-8fb4-947817093c5e sent= None None
+ntfy_publish 14:24:49.454 rid= ed1e3144-26eb-437c-8fb4-947817093c5e sent= ed1e3144-26eb-437c-8fb4-947817093c5e 200
+번개 모집 오늘 12시 | score 68 | alerted True | ok_webhook 일치: SIMULATED verdict from mock webhook

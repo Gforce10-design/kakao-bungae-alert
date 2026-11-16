@@ -1,0 +1,11 @@
+# item2 reconnect ?since= — 100 s DROP (iptables egress for uid 10198 + ingress from the ntfy endpoint; 1st attempt with egress-only DROP was INVALID because inbound data still arrived), SIMULATED mock replies via real ntfy.sh throwaway topic; grokTimeoutSeconds=180; delay 60 s
+netstat-pre: 1
+post 16:02:31.575
+DROP start 16:02:37.971
+RESTORED 16:04:18.499
+16:04:25 수다방 | 번개 모집 오늘 2시 |score 68 alerted True 보조판정 grok
+--- mock log (redacted)
+{"ev": "webhook_post", "path": "/hook", "auth_ok": true, "auth_header_present": true, "ctype": "application/json; charset=utf-8", "fields": ["chatName", "postTypes", "replyServer", "replyTopic", "requestId", "score", "sender", "text"], "rid": "f52295b0-79f5-4a
+{"ev": "ntfy_publish", "rid": "f52295b0-79f5-4a80-86f5-e16663feddde", "mode": "reply", "status": 200, "sent_id": "f52295b0-79f5-4a80-86f5-e16663feddde", "took": 0.05, "t": "16:03:33.534", "ts": 1793862213.5343814}
+--- app ntfy logcat (redacted)
+DONE 16:04:31

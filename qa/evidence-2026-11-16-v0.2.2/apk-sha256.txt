@@ -1,0 +1,1 @@
+fdf27c9a430459e77f58884c98dc0d83409afceda2e1c022c4952b2d34da1b73  /workspace/builds/bungae-v022/dist/bungae-alert-v0.2.2-vc6.apk

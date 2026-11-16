@@ -1,0 +1,9 @@
+--------- beginning of main
+11-16 21:20:23.653 D/BungaeDrop( 3175): room: shortcut=none name=null title=보낸사람A
+11-16 21:20:24.482 D/BungaeDrop( 3175): pass: chat='테스트방A' sender= text='12/12 모임 못오시는 분이 있어서 선착순 갠톡으로 신청 받겠습니다'
+11-16 21:20:25.517 D/BungaeDrop( 3175): decision: chat='테스트방A' alert=true score=78 type=meetup summary='모임 +16 모집 표현 · 모임 +16 빈자리 모집 · 모임 +16 모임 일정·신청 · 모임 +12 날짜 ·'
+11-16 21:21:50.070 D/BungaeDrop( 3175): room: shortcut=none name=null title=보낸사람A
+11-16 21:21:50.285 D/BungaeDrop( 3175): room: shortcut=none name=null title=null
+11-16 21:21:50.421 D/BungaeDrop( 3175): pass: chat='테스트방A' sender= text='선착순이야?'
+11-16 21:21:51.219 D/BungaeDrop( 3175): decision: chat='테스트방A' alert=false score=2 type=null summary='나눔 +18 선착순 · 감점 -16 · 참고: 질문'
+11-16 21:21:51.476 D/BungaeDrop( 3175): drop keyword-prefilter: room= conv= title= enabledRules=6 body=''

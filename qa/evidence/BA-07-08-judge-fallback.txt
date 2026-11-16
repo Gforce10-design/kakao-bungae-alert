@@ -1,0 +1,8 @@
+BA-07/BA-08 judge tests (Gemini API judge enabled with FAKE placeholder key via UI; SIMULATED Kakao notifs)
+settings enabledBackends: gemini_nano, gemini_api
+BA-08: clear match (100) + clear reject (10) + no-keyword msg -> QA_BA counter unchanged (1 -> 1 pkt, the pre-existing control probe)
+borderline '번개 모집 오늘 8시' (score 68) -> counter 1 -> 16 pkts (2493 B): judge request attempted; invalid fake key -> fallback alert, summary '보조판정 없음, 점수와 기준 비교'
+BA-07: iptables DROP for app uid (all app traffic blocked), borderline '번개 모집 오늘 9시' posted 10:38:09 -> alerted=True (score 68>=cutoff 62), summary '...보조판정 없음, 점수와 기준 비교'; DROP rule hit 9 pkts/9123 B (judge attempted, blocked)
+번개 모집 오늘 9시 68 True 모임 +28 번개 · 모임 +16 모집 표현 · 모임 +12 날짜 · 모임 +12 시간 · 보조판정 없음, 점수와 기준 비교
+번개 모집 오늘 8시 68 True 모임 +28 번개 · 모임 +16 모집 표현 · 모임 +12 날짜 · 모임 +12 시간 · 보조판정 없음, 점수와 기준 비교
+       9     9123 DROP       all  --  *      *       0.0.0.0/0            0.0.0.0/0            owner UID match 10192

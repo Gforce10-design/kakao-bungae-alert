@@ -1,0 +1,3 @@
+bungae_once_v2 title: 번개모임 · 테스트방A
+text: 잡힌 단어: 선착순 · 12/12 모임 못오시는 분이 있어서 선착순 갠톡으로 신청 받겠습니다
+stub title=보낸사람A subText=테스트방A text=target sentence

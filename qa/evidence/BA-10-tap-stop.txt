@@ -1,0 +1,1 @@
+BA-10 tap-to-stop: alert posted 10:28:2x; tapped notification -> AlarmActivity (BA-10-3 png); tapped '카톡 열기' 10:30:38; notification id=7 cancelled 10:30:46.4 (lifetime 138s); AlarmRingService gone (dumpsys count 0); no crash; app pid alive. Kakao stub has no room activity so 'open room' fell back to launcher (spec says 가능하면).

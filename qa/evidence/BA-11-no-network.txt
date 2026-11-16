@@ -1,0 +1,7 @@
+BA-11 no external traffic by default
+Setup: iptables chain QA_BA counts every packet owned by app uid 10192 (control: a run-as nc SYN is counted: 1 pkt/60 B)
+Window 10:15 (app process start) .. 10:34, default settings (only Gemini Nano on-device judge enabled, no keys, webhook empty): ~16 detections, 6+ alerts incl. repeat alarm
+    pkts      bytes target     prot opt in     out     source               destination         
+       1       60 RETURN     all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+(1 pkt/60 B above is the deliberate control probe at 10:34; 0 before it)
+Settings: ntfyTopic is a per-install random auto-generated string (not a shared default), only used by Grok-webhook judge (disabled); Grok webhook field empty (see BA-12 png)

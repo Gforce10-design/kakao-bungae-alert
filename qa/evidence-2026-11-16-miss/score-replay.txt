@@ -1,0 +1,22 @@
+Source: Gforce10-design/kakao-bungae-alert v0.2.1 tag, commit 461e7a01201901e8b52589b845e7ddfb3e1dec69
+Faithful replay of ScoreClassifier.score() + Sensitivity.cutoff() + DecisionPolicy bands.
+Default settings: sensitivity=40 -> cutoff=62, borderlineBand=12 -> CLEAR_REJECT if score < 50.
+
+TEXT (paraphrased for the public repo; scores are from the original): 12/12 모임 못오시는 분이 있어서 선착순 갠톡으로 신청 받겠습니다
+  attendPhrase matched: 오시는 분   (false positive inside "못오시는 분")
+  date matched: 12/12
+  meetup=30  hits: 참석 권유 +18, 날짜 +12
+  giveaway=18 hits: 선착순 +18
+  penalty=0  negatives=[]
+  relevantType=MEETUP (UI typeShort="번개") because 30>18
+  alert=false at every sensitivity 0..100 (max cutoff is 35, 30<35)
+
+CONTROL: 오늘 7시 강남 번개 3명 모여요
+  meetup=80  hits: 번개 +28, 인원 +16, 날짜 +12, 시간 +12, 장소 +12
+  giveaway=0
+  alert=true at default cutoff 62
+
+APK: bungae-alert-v0.2.1-vc5.apk
+  package app.bungaealert versionCode 5 versionName 0.2.1
+  sha256 088a352d039b874553636b7a1db596f035a26d3c3e4ccf7d31e2a1d7dfdd046b
+  (matches GitHub release asset digest)

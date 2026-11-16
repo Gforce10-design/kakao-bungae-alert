@@ -1,0 +1,7 @@
+BA-14 keyword editing
+UI (screens BA-14-1..3): empty input -> '내용을 입력하세요', 저장 disabled; add 'gangnam me' -> accepted (3개 사용); 'Gangnam me' (case-diff dup) -> '같은 말이 이미 있습니다', 저장 disabled; toggle off -> '꺼짐', persisted to match-keywords.json enabled:false
+File-level (adb root edits of app-private match-keywords.json, then force-stop + relaunch):
+  missing file -> reseeded [번개, 선착순]
+  corrupt file 'NOT{json[[' -> reseeded [번개, 선착순]
+  '[]' -> stays [] (empty list kept)
+Limits: Korean text can't be typed via adb input, so empty/duplicate/accept were exercised with ASCII 'gangnam me' not F-KEYWORDS' Korean strings; edit(rename) and delete not exercised.

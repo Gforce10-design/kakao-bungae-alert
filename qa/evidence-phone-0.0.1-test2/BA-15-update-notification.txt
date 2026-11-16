@@ -1,0 +1,14 @@
+# BA-15 update notification (installed vc2 0.0.1-test2; latest GitHub release v0.0.1-test2 = versionCode 2, commit 1d1e017; APK sha256 matches release SHA256SUMS)
+before (prefs): last_check_at" value="1793848380956" 
+throttle bypass: deleted shared_prefs/bungae_update.xml, force-stop, relaunch (13:33 KST)
+prefs after relaunch:
+<?xml version='1.0' encoding='utf-8' standalone='yes' ?>
+<map>
+    <long name="last_check_at" value="1793853168112" />
+</map>
+app-uid packets since counter zero at relaunch (check ran):
+      18     1648 RETURN     all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+id=77 update notification from app (empty = none):
+worker/crash log:
+11-05 13:32:48.064 D/WM-WorkerWrapper(19686): Starting work for app.bungaealert.update.UpdateCheckWorker
+11-05 13:32:57.170 I/WM-WorkerWrapper(19686): Worker result SUCCESS for Work [ id=1f89c066-9ea3-4d5e-8938-e80f51c5071a, tags={ app.bungaealert.update.UpdateCheckWorker } ]

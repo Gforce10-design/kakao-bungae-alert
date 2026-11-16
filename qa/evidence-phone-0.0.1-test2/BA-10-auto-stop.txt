@@ -1,0 +1,4 @@
+# BA-10 auto-stop (repeat rule 반복방, SIMULATED Kakao notif, build 0.0.1-test2)
+  11-05 12:36:19.599 I/am_foreground_service_start(  575): [0,app.bungaealert/.alert.AlarmRingService,0,PROC_STATE_FGS,37,37,0,0,0,1,UNKNOWN,1073741824]
+  11-05 12:39:22.954 I/am_foreground_service_stop(  575): [0,app.bungaealert/.alert.AlarmRingService,0,PROC_STATE_FGS,37,37,0,0,183332,1,STOP_FOREGROUND,1073741824]
+start 12:36:19.599 KST, stop 12:39:22.954 KST => 183.3 s (180 s cap + emulator timer latency); FGS duration field 183332 ms

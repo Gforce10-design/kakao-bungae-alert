@@ -1,0 +1,12 @@
+[
+  {"id":"F-PKG-OTHER","use":"BA-01","packageName":"com.example.other","title":"수다방","text":"오늘 저녁 7시 강남역 번개 모집합니다","expect":"ignored"},
+  {"id":"F-CHAT","use":"BA-03","rules":[{"mode":"EXACT","pattern":"수다방"},{"mode":"CONTAINS","pattern":"자유"},{"mode":"ENDS_WITH","pattern":"위하여~"}],"cases":[{"chat":"수다방","match":["EXACT"]},{"chat":"수다방2","match":[]},{"chat":"경제적 자유를 위하여~","match":["CONTAINS","ENDS_WITH"]},{"chat":"  수다방  ","match":["EXACT"]}]},
+  {"id":"F-MEDIA","use":"BA-04","texts":["사진","(이모티콘)","","ㅋㅋㅋㅋ","삭제된 메시지입니다"],"expect":"no_alert"},
+  {"id":"F-MSG-MEETUP","use":"BA-05","packageName":"com.kakao.talk","chat":"수다방","sender":"민수","text":"오늘 저녁 7시 강남역 번개모임 4명 모집합니다 참석 가능하신 분","expect":"alert_meetup"},
+  {"id":"F-MSG-GIVEAWAY","use":"BA-05","packageName":"com.kakao.talk","chat":"수다방","sender":"지현","text":"선착순 3분께 아메리카노 기프티콘 나눔합니다","expect":"alert_giveaway"},
+  {"id":"F-MARKET","use":"BA-06","text":"번개장터에 올렸어요","expect":"no_meetup_bonus"},
+  {"id":"F-PAST","use":"BA-05 negative","text":"어제 번개 재밌었어요","expect":"no_alert_expected_unconfirmed"},
+  {"id":"F-REPLY","use":"BA-04 negative","text":"저요","expect":"no_alert_expected_unconfirmed"},
+  {"id":"F-DEDUPE","use":"BA-09","chat":"수다방","texts":["오늘 7시 번개 모집","오늘  7시   번개 모집"],"expect":"second_suppressed_within_600000ms"},
+  {"id":"F-KEYWORDS","use":"BA-14","add":["강남 번개","",  "번개"],"expect":["accepted","rejected_empty","rejected_duplicate"]}
+]

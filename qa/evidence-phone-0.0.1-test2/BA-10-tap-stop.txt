@@ -1,0 +1,2 @@
+# BA-10 tap-stop (SIMULATED)
+ring start 12:43:16.7 KST; tapped notification action 카톡 열기 at 12:44:48; FGS stopped 12:44:49.4 (92.7 s) -> tap stops ring; no crash
