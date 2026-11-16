@@ -1,0 +1,10 @@
+# item2 reconnect ?since= — 100 s DROP (iptables, uid 10198), SIMULATED mock replies via real ntfy.sh throwaway topic; grokTimeoutSeconds=180; delay 60 s
+post 15:59:29.266
+DROP start 15:59:34.476
+RESTORED 16:01:14.848
+16:01:20 수다방 | 번개 모집 오늘 1시 |score 68 alerted True 보조판정 grok
+--- mock log (redacted)
+{"ev": "webhook_post", "path": "/hook", "auth_ok": true, "auth_header_present": true, "ctype": "application/json; charset=utf-8", "fields": ["chatName", "postTypes", "replyServer", "replyTopic", "requestId", "score", "sender", "text"], "rid": "5a38f051-4c99-4f
+{"ev": "ntfy_publish", "rid": "5a38f051-4c99-4f4b-b1b8-95e132b7c68f", "mode": "reply", "status": 200, "sent_id": "5a38f051-4c99-4f4b-b1b8-95e132b7c68f", "took": 0.05, "t": "16:00:30.545", "ts": 1793862030.5450351}
+--- app ntfy logcat (redacted)
+DONE 16:01:21

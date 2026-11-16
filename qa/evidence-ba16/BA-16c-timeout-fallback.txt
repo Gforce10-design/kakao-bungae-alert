@@ -1,0 +1,5 @@
+# (c) SIMULATED mock accepted POST (HTTP 200) but never replied (mode=silent). stub notif when=806.501 (emu clock) -> BA alert when=852.493 (emu clock) => 45.99 s (timeout 45 s + ~1 s processing)
+{"ev": "webhook_post", "path": "/hook", "auth_ok": true, "auth_header_present": true, "ctype": "application/json; charset=utf-8", "fields": ["chatName", "postTypes", "replyServer", "replyTopic", "requestId", "score", "sender", "text"], "rid": "5fde1b64-f2e1-4bdf-8fb9-b3458122b1de", "chat": "수다방", "score": 68, "postTypes": ["meetup", "giveaway"], "replyTopic_matches_cfg": true, "replyServer":
+{"ev": "no_reply_by_mode", "rid": "5fde1b64-f2e1-4bdf-8fb9-b3458122b1de", "t": "14:16:49.106", "ts": 1793855809.106755}
+# detections:
+번개 모집 오늘 3시 | score 68 | alerted True meetup | ... 보조판정 없음, 점수와 기준 비교

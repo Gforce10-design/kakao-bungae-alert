@@ -1,0 +1,25 @@
+# 2026-11-05 12:31:15 KST snapshot for BA-04-media-empty-ignored (build 0.0.1-test2 vc2, app uid 10197)
+## app.bungaealert active notifications
+    pkg=app.bungaealert user=UserHandle{0} id=2147483647 tag=ranker_group importance=4 Notification(channel=bungae_once shortcut=null contentView=null vibrate=null sound=null defaults=0x0 flags=0x710 color=0x00000000 groupKey=rank
+    pkg=app.bungaealert user=UserHandle{0} id=209268320 tag=null importance=4 Notification(channel=bungae_once shortcut=null contentView=null vibrate=null sound=null defaults=0x0 flags=0x10 color=0x00000000 category=msg vis=PRIVAT
+                android.title=String (번개모임 · 수다방)
+                android.text=String (모레 저녁 6시 신촌 번개모임 3명 모집합니다 참석 가능하신 분)
+    pkg=app.bungaealert user=UserHandle{0} id=939957232 tag=null importance=4 Notification(channel=bungae_once shortcut=null contentView=null vibrate=null sound=null defaults=0x0 flags=0x10 color=0x00000000 category=msg vis=PRIVAT
+                android.title=String (번개모임 · 수다방)
+                android.text=String (내일 점심 12시 판교 번개 모집합니다 참석 가능하신 분 5명)
+                android.title=String (선착순 나눔 · 수다방)
+                android.text=String (선착순 3분께 아메리카노 기프티콘 나눔합니다)
+    pkg=app.bungaealert user=UserHandle{0} id=773463486 tag=null importance=4 Notification(channel=bungae_once shortcut=null contentView=null vibrate=null sound=null defaults=0x0 flags=0x10 color=0x00000000 category=msg vis=PRIVAT
+                android.title=String (번개모임 · 수다방)
+                android.text=String (오늘 저녁 7시 강남역 번개모임 4명 모집합니다 참석 가능하신 분)
+    pkg=app.bungaealert user=UserHandle{0} id=48 tag=null importance=2 Notification(channel=bungae_listener shortcut=null contentView=null vibrate=null sound=null defaults=0x0 flags=0x62 color=0x00000000 category=status groupKey=s
+                android.title=String (카카오톡 알림 감시)
+                android.text=String (감시 중입니다. 연결 여부는 앱의 연결 화면에서 확인하세요.)
+## detections.json (root read, summarized)
+수다방 | 모레 저녁 6시 신촌 번개모임 3명 모집합니다 참석 가능하신 분 |score 100 alerted True meetup | 모임 +36 번개모임 · 모임 +16 모집 표현 · 모임 +18 참석 권유 · 모임 +16 인원 · 모임 +
+수다방 | 내일 점심 12시 판교 번개 모집합니다 참석 가능하신 분 5명 |score 100 alerted True meetup | 모임 +28 번개 · 모임 +16 모집 표현 · 모임 +18 참석 권유 · 모임 +16 인원 · 모임 +12
+수다방 | 어제 번개 재밌었어요 |score 2 alerted False  | 모임 +28 번개 · 감점 -26 · 참고: 지난 일정·회고
+수다방 | 선착순 3분께 아메리카노 기프티콘 나눔합니다 |score 100 alerted True giveaway | 나눔 +38 기프티콘 · 나눔 +20 나눔·증정 · 나눔 +18 선착순 · 나눔 +18 n분께 · 나눔 +8
+수다방 | 오늘 저녁 7시 강남역 번개모임 4명 모집합니다 참석 가능하신 분 |score 100 alerted True meetup | 모임 +36 번개모임 · 모임 +16 모집 표현 · 모임 +18 참석 권유 · 모임 +16 인원 · 모임 +
+## iptables owner-uid counter QA_BA (uid 10197)
+       0        0 RETURN     all  --  *      *       0.0.0.0/0            0.0.0.0/0           

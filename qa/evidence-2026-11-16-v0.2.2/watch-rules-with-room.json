@@ -1,0 +1,79 @@
+[
+  {
+    "id": "qa-exact",
+    "pattern": "수다방",
+    "matchMode": "exact",
+    "detectMeetup": true,
+    "detectGiveaway": true,
+    "alertMode": "once",
+    "enabled": true,
+    "keywordIds": [],
+    "keywordsSpecified": false
+  },
+  {
+    "id": "qa-contains",
+    "pattern": "자유",
+    "matchMode": "contains",
+    "detectMeetup": true,
+    "detectGiveaway": true,
+    "alertMode": "once",
+    "enabled": true,
+    "keywordIds": [],
+    "keywordsSpecified": false
+  },
+  {
+    "id": "qa-ends",
+    "pattern": "위하여~",
+    "matchMode": "ends_with",
+    "detectMeetup": true,
+    "detectGiveaway": true,
+    "alertMode": "once",
+    "enabled": true,
+    "keywordIds": [],
+    "keywordsSpecified": false
+  },
+  {
+    "id": "qa-repeat",
+    "pattern": "반복방",
+    "matchMode": "exact",
+    "detectMeetup": true,
+    "detectGiveaway": true,
+    "alertMode": "repeat",
+    "enabled": true,
+    "keywordIds": [],
+    "keywordsSpecified": false
+  },
+  {
+    "id": "qa-disabled",
+    "pattern": "꺼진방",
+    "matchMode": "exact",
+    "detectMeetup": true,
+    "detectGiveaway": true,
+    "alertMode": "once",
+    "enabled": false,
+    "keywordIds": [],
+    "keywordsSpecified": false
+  },
+  {
+    "id": "qa-empty",
+    "pattern": "",
+    "matchMode": "contains",
+    "detectMeetup": true,
+    "detectGiveaway": true,
+    "alertMode": "once",
+    "enabled": true,
+    "keywordIds": [],
+    "keywordsSpecified": false
+  },
+  {
+    "id": "qa-test-room-a",
+    "pattern": "테스트방A",
+    "matchMode": "exact",
+    "detectMeetup": true,
+    "detectGiveaway": true,
+    "alertMode": "once",
+    "enabled": true,
+    "keywordIds": [],
+    "keywordsSpecified": false
+  }
+]

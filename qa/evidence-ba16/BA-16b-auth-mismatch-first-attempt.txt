@@ -1,0 +1,5 @@
+# SIMULATED mock webhook, first attempt 14:10 KST: the header value typed in the UI was incomplete (typing glitch on the lagging emulator).
+# Mock log (header value never logged, only equality check):
+webhook_post path=/hook auth_ok=False auth_header_present=True ctype="application/json; charset=utf-8" fields=[chatName,postTypes,replyServer,replyTopic,requestId,score,sender,text] score=68 postTypes=[meetup,giveaway] replyTopic_matches_cfg=True replyServer=https://ntfy.sh   (mock answered HTTP 401, no ntfy publish)
+# App result: detections.json "번개 모집 오늘 7시" score 68 alerted=True meetup, summary "... · 보조판정 없음, 점수와 기준 비교"; decision recorded ~1.6 s after the notification (immediate fallback on non-2xx, no 45 s wait).
+# => extra observation: HTTP 401 from the webhook -> immediate score fallback; Authorization header is really sent.

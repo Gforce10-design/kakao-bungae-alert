@@ -1,0 +1,5 @@
+# BA-01 other pkg (com.example.other, SIMULATED) -> expect no BA alert
+alerts:
+0
+detections:
+none/err Expecting value: line 1 column 1 (char 0)

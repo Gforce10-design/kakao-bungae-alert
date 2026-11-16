@@ -1,0 +1,4 @@
+  * ServiceRecord{c0d6adf u0 app.bungaealert/.ai.NtfySubscribeService}
+    isForeground=true foregroundId=42 types=40000000 foregroundNoti=Notification(channel=bungae_ntfy shortcut=null contentView=null vibrate=null sound=null defaults=0x0 flags=0x62 color=0x00000000 groupKey=silent vis=PRIVATE)
+# pm list packages | grep -i ntfy  (emulator-5558, 2026-11-05 14:10:05 KST)
+exit=1

@@ -1,0 +1,3 @@
+Broadcasting: Intent { act=qa.POST flg=0x400000 cmp=com.kakao.talk/qa.PostReceiver (has extras) }
+Broadcast completed: result=0
+POST_RC:0

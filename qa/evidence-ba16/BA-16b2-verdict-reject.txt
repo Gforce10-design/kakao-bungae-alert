@@ -1,0 +1,8 @@
+# (b2) verdict isMatch=false from SIMULATED mock; score 68 >= cutoff 62 so score fallback would alert
+clock_offset_box_minus_emu=1.35 (adb round trip 0.386)
+post_cmd_start=1793855774.231526 post_cmd_end=1793855775.442238
+webhook_post ts=1793855776.468 {'auth_ok': True, 'fields': ['chatName', 'postTypes', 'replyServer', 'replyTopic', 'requestId', 'score', 'sender', 'text'], 'rid': '20a11917-0bf1-47f1-9e79-cffe23857c01', 'score': 68, 'mode': 'reject'}
+ntfy_publish ts=1793855777.519 {'rid': '20a11917-0bf1-47f1-9e79-cffe23857c01', 'mode': 'reject', 'status': 200, 'sent_id': '20a11917-0bf1-47f1-9e79-cffe23857c01', 'took': 0.05}
+번개 모집 오늘 4시 | score 68 | alerted False  | 모임 +28 번개 · 모임 +16 모집 표현 · 모임 +12 날짜 · 모임 +12 시간 · 보조판정 grok_webhook 아님: SIMULATED verdict from mock webhook
+alert notifications with text 4시:
+0

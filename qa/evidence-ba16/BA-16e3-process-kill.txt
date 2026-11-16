@@ -1,0 +1,23 @@
+# (e3) service kill tests, emulator-5558
+14:25:32 pre:
+  * ServiceRecord{c0d6adf u0 app.bungaealert/.ai.NtfySubscribeService}
+    isForeground=true foregroundId=42 types=40000000 foregroundNoti=Notification(channel=bungae_ntfy shortcut=
+u0_a197      20244   357   14091304 202116 do_epoll_wait       0 S app.bungaealert
+## kill -9 whole app process (root), no action afterwards
+14:25:35.589 killed pid
+14:25:40.593 +5s: 22499 |   * ServiceRecord{c0d6adf u0 app.bungaealert/.ai.NtfySubscribeService}     isForeground=true foregroundId=42 types=40000000 foregroundNoti=Notification(channel=bungae_ntfy shortcut= 
+14:25:49.060 +10s: 22499 |   * ServiceRecord{c0d6adf u0 app.bungaealert/.ai.NtfySubscribeService}     isForeground=true foregroundId=42 types=40000000 foregroundNoti=Notification(channel=bungae_ntfy shortcut= 
+14:25:56.887 +15s: 22499 |   * ServiceRecord{c0d6adf u0 app.bungaealert/.ai.NtfySubscribeService}     isForeground=true foregroundId=42 types=40000000 foregroundNoti=Notification(channel=bungae_ntfy shortcut= 
+14:26:03.277 +20s: 22499 |   * ServiceRecord{c0d6adf u0 app.bungaealert/.ai.NtfySubscribeService}     isForeground=true foregroundId=42 types=40000000 foregroundNoti=Notification(channel=bungae_ntfy shortcut= 
+14:26:09.569 +25s: 22499 |   * ServiceRecord{c0d6adf u0 app.bungaealert/.ai.NtfySubscribeService}     isForeground=true foregroundId=42 types=40000000 foregroundNoti=Notification(channel=bungae_ntfy shortcut= 
+14:26:16.656 +30s: 22499 |   * ServiceRecord{c0d6adf u0 app.bungaealert/.ai.NtfySubscribeService}     isForeground=true foregroundId=42 types=40000000 foregroundNoti=Notification(channel=bungae_ntfy shortcut= 
+14:26:22.967 +35s: 22499 |   * ServiceRecord{c0d6adf u0 app.bungaealert/.ai.NtfySubscribeService}     isForeground=true foregroundId=42 types=40000000 foregroundNoti=Notification(channel=bungae_ntfy shortcut= 
+14:26:29.557 +40s: 22499 |   * ServiceRecord{c0d6adf u0 app.bungaealert/.ai.NtfySubscribeService}     isForeground=true foregroundId=42 types=40000000 foregroundNoti=Notification(channel=bungae_ntfy shortcut= 
+14:26:36.290 +45s: 22499 |   * ServiceRecord{c0d6adf u0 app.bungaealert/.ai.NtfySubscribeService}     isForeground=true foregroundId=42 types=40000000 foregroundNoti=Notification(channel=bungae_ntfy shortcut= 
+14:26:42.548 +50s: 22499 |   * ServiceRecord{c0d6adf u0 app.bungaealert/.ai.NtfySubscribeService}     isForeground=true foregroundId=42 types=40000000 foregroundNoti=Notification(channel=bungae_ntfy shortcut= 
+14:26:48.927 +55s: 22499 |   * ServiceRecord{c0d6adf u0 app.bungaealert/.ai.NtfySubscribeService}     isForeground=true foregroundId=42 types=40000000 foregroundNoti=Notification(channel=bungae_ntfy shortcut= 
+14:26:55.430 +60s: 22499 |   * ServiceRecord{c0d6adf u0 app.bungaealert/.ai.NtfySubscribeService}     isForeground=true foregroundId=42 types=40000000 foregroundNoti=Notification(channel=bungae_ntfy shortcut= 
+## after process kill: new judge -> reply?
+webhook_post 14:27:04.774 rid= ea10af04-9ead-4a14-bdeb-2a87346702ab sent= None None
+ntfy_publish 14:27:04.833 rid= ea10af04-9ead-4a14-bdeb-2a87346702ab sent= ea10af04-9ead-4a14-bdeb-2a87346702ab 200
+번개 모집 오늘 11시 | score 68 | alerted True | ok_webhook 일치: SIMULATED verdict from mock webhook

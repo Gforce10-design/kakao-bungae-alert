@@ -1,0 +1,5 @@
+# BA-07 / BA-08 judge fallback + boundary-only (build 0.0.1-test2; SIMULATED notifs)
+Setup: Gemini API key = fake (typed via UI, not recorded), Gemini API backend toggled on via UI (enabledBackends=[gemini_nano,gemini_api]); iptables DROP for app uid 10197 (QA_BA chain, counts attempts)
+BA-08: clear match (score 100, 사당역 번개모임) + clear reject (점심 인사): DROP counter after both = 0 pkts (see BA-08-judge-enabled-clear-cases.txt)
+BA-07: borderline '번개 모집 오늘 9시' -> score 68 (cutoff 62) -> alert fired; summary: '모임 +28 번개 · 모임 +16 모집 표현 · 모임 +12 날짜 · 모임 +12 시간 · 보조판정 없음, 점수와 기준 비교'
+DROP counter after borderline: 4 pkts (judge attempted network, blocked), stable afterwards

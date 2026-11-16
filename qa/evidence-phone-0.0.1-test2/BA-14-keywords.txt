@@ -1,0 +1,10 @@
+# BA-14 keyword store (build 0.0.1-test2), file /data/data/app.bungaealert/files/match-keywords.json
+UI (ASCII only; adb cannot type Hangul): empty rejected (내용을 입력하세요, 저장 disabled) BA-14-1; add 'gangnam' accepted BA-14-2 (also shown in room-rule summaries); duplicate 'GANGNAM' (case-insens.) rejected '같은 말이 이미 있습니다' BA-14-3; disable persisted (enabled:false) BA-14-4; edit 'gangnam'->'gangnam2' persisted (BA-14-5); delete w/ confirm dialog removed it (BA-14-6)
+## missing -> file after launch+75s:
+[{"id":"default-bungae","text":"번개","enabled":true},{"id":"default-giveaway","text":"선착순","enabled":true}]
+## corrupt -> file after launch+75s:
+[{"id":"default-bungae","text":"번개","enabled":true},{"id":"default-giveaway","text":"선착순","enabled":true}]
+## empty -> file after launch+75s:
+[]
+
+## restored defaults for later steps

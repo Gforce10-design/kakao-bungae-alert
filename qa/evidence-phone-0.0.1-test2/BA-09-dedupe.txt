@@ -1,0 +1,5 @@
+# BA-09 dedupe (SIMULATED) build 0.0.1-test2
+12:35:14 post '오늘 7시 번개 모집' (score 68, processed)
+12:35:39 post whitespace variant '오늘  7시   번개 모집' -> suppressed (1 detection row only at 12:36)
+12:46:26 same text re-posted >10 min later:
+2 rows for dedupe text now

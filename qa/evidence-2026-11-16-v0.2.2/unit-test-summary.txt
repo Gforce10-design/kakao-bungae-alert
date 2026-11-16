@@ -1,0 +1,34 @@
+# testDebugUnitTest --rerun-tasks, 2026-11-16 KST
+app.bungaealert.ai.ReplyHubTest: tests=6 fail=0 err=0 skip=0 time=0.041
+app.bungaealert.alert.KakaoOpenerTest: tests=8 fail=0 err=0 skip=0 time=4.297
+app.bungaealert.detect.AlertFeelTest: tests=8 fail=0 err=0 skip=0 time=0.148
+app.bungaealert.detect.KakaoAndPolicyTest: tests=14 fail=0 err=0 skip=0 time=0.048
+app.bungaealert.detect.KeywordMatcherTest: tests=7 fail=0 err=0 skip=0 time=0.004
+app.bungaealert.detect.MatchedWordsTest: tests=8 fail=0 err=0 skip=0 time=0.113
+app.bungaealert.detect.PayloadAndUpstreamTest: tests=7 fail=0 err=0 skip=0 time=0.008
+app.bungaealert.detect.RuleKeywordsTest: tests=3 fail=0 err=0 skip=0 time=0.005
+app.bungaealert.detect.ScoreClassifierTest: tests=8 fail=0 err=0 skip=0 time=0.012
+  - timeInsideBodyIsNotAFalseSenderSplit: PASS
+  - meetupRecruitmentScoresHigh: PASS
+  - cannotAttendIsNotAnAttendInvite: PASS
+  - moimAndAbsenceWithoutRecruitStayLow: PASS
+  - vacancyFcfsSignupScoresAsMeetup: PASS
+  - giveawayScoresHigh: PASS
+  - mediaAndEmptyDoNotScore: PASS
+  - casualAndRepliesStayLow: PASS
+app.bungaealert.notify.ListenerHealthTest: tests=9 fail=0 err=0 skip=0 time=0.003
+app.bungaealert.ui.ChipLayoutTest: tests=1 fail=0 err=0 skip=0 time=3.453
+app.bungaealert.ui.FormatTest: tests=4 fail=0 err=0 skip=0 time=0.004
+app.bungaealert.ui.RuleEditorKeywordTest: tests=2 fail=0 err=0 skip=0 time=0.531
+app.bungaealert.ui.ScreenScreenshots: tests=28 fail=0 err=0 skip=0 time=3.191
+app.bungaealert.update.ApkArchiveIdentityTest: tests=1 fail=0 err=0 skip=0 time=0.709
+app.bungaealert.update.ApkTrustTest: tests=5 fail=0 err=0 skip=0 time=0.004
+app.bungaealert.update.ChecksumsTest: tests=4 fail=0 err=0 skip=0 time=0.002
+app.bungaealert.update.ReleaseQueryTest: tests=8 fail=0 err=0 skip=0 time=0.008
+app.bungaealert.update.SemanticVersionTest: tests=4 fail=0 err=0 skip=0 time=0.004
+app.bungaealert.update.UpdateNotificationTest: tests=3 fail=0 err=0 skip=0 time=0.09
+app.bungaealert.update.UpdatePipelineTest: tests=5 fail=0 err=0 skip=0 time=0.007
+app.bungaealert.update.UpdatePolicyTest: tests=6 fail=0 err=0 skip=0 time=0.003
+app.bungaealert.update.UpdateThrottleTest: tests=2 fail=0 err=0 skip=0 time=0.001
+app.bungaealert.update.VersionCodeTest: tests=4 fail=0 err=0 skip=0 time=0.0
+TOTAL tests=155 failures=0 errors=0 skipped=0 suites=24

@@ -1,0 +1,20 @@
+# BA-01/02/03/05 regression RE-SNAPSHOT (2026-11-05 15:27:55 KST) build eea1dce debug; Kakao notifications SIMULATED
+## BA notifications
+                android.title=String (번개모임 · 수다방)
+                android.text=String (오늘 저녁 7시 강남역 번개모임 4명 모집합니다 참석 가능하신 분)
+                android.title=String (번개모임 · 경제적 자유를 위하여~)
+                android.text=String (오늘 저녁 5시 홍대 번개모임 4명 모집합니다 참석 가능하신 분)
+                android.title=String (번개모임 · 수다방)
+                android.text=String (오늘 저녁 6시 신촌 번개모임 4명 모집합니다 참석 가능하신 분)
+                android.title=String (번개모임 · 수다방)
+                android.text=String (오늘 저녁 8시 사당역 번개모임 4명 모집합니다 참석 가능하신 분)
+                android.title=String (선착순 나눔 · 수다방)
+                android.text=String (선착순 3분께 아메리카노 기프티콘 나눔합니다)
+                android.title=String (카카오톡 알림 감시)
+                android.text=String (감시 중입니다. 연결 여부는 앱의 연결 화면에서 확인하세요.)
+## detections (newest first)
+수다방 | 오늘 저녁 7시 강남역 번개모임 4명 모집합니다 참석 가능하신 분 |score 100 
+경제적 자유를 위하여~ | 오늘 저녁 5시 홍대 번개모임 4명 모집합니다 참석 가능하�
+수다방 | 오늘 저녁 6시 신촌 번개모임 4명 모집합니다 참석 가능하신 분 |score 100 ale
+수다방 | 오늘 저녁 8시 사당역 번개모임 4명 모집합니다 참석 가능하신 분 |score 100 
+수다방 | 선착순 3분께 아메리카노 기프티콘 나눔합니다 |score 100 alerted True giveaway | 

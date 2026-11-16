@@ -1,0 +1,7 @@
+# BA-11 no external transmission (build 0.0.1-test2 vc2; SIMULATED notifs)
+QA_BA owner-uid(10197) counter zeroed at 12:24 after first-launch; processing of 14 detections (meetup/giveaway matches, repeat alarm, dedupe) later:
+    pkts      bytes target     prot opt in     out     source               destination         
+       0        0 RETURN     all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+settings: no webhook key present; enabledBackends=[gemini_nano] only (on-device); ntfyTopic is a random per-install value (bungae-<random>), only used if Grok judge enabled; subscriptionRiskAccepted=false
+OBSERVATION: before the counter was zeroed, first launch of the fresh install generated 31 pkts from app uid (UpdateCheckWorker -> api.github.com/releases/latest, 6h-throttled; no message content; see BA-15).
+Counter control probe: see BA-07-08 file (DROP chain counts judge attempts for same uid).

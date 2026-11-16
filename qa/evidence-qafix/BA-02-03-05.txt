@@ -1,0 +1,6 @@
+# BA-02/03/05 regression (2026-11-05 15:26:08 KST) build eea1dce debug, SIMULATED kakao stub
+## notifications
+                android.title=String (카카오톡 알림 감시)
+                android.text=String (감시 중입니다. 연결 여부는 앱의 연결 화면에서 확인하세요.)
+## detections
+수다방 | 선착순 3분께 아메리카노 기프티콘 나눔합니다 |score 100 alerted True giveaway | 나눔 +38 기프티콘 · 나눔 +20 나눔·증정 · 나눔 +18 선착순 · 나눔 +18 n분께 · 나눔 +8

@@ -1,0 +1,5 @@
+BA-15 update notification (real network; release v0.0.1-test2 versionCode 2 > installed vc1)
+10:39:53 UpdateCheckWorker ran at app start (bungae_update.xml deleted to bypass 6h throttle) -> pref notified_version_code=2, available_tag=v0.0.1-test2
+notification_canceled id=77 at 10:40:24 was my force-stop (cancel on stop)
+10:40:56 second UpdateCheckWorker run (last_check_at removed, notified_version_code kept) -> Worker SUCCESS 10:41:03, NO new notification id=77 enqueued (events log), notified_version_code still 2
+404/401 handling: NOT exercised on device (cannot make api.github.com return 404/401 on the emulator without a TLS-intercepting mock) -> sub-case BLOCKED

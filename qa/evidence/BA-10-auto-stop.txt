@@ -1,0 +1,5 @@
+BA-10 repeat ring auto-stop (rule 반복방, alertMode=repeat; SIMULATED Kakao notif)
+post time: 10:24:20 KST; AlarmRingService FGS started 10:24:23.2 KST (logcat ActivityManager)
+AlarmRingService FGS notification id=7 cancelled 10:27:27.8 KST (events log notification_canceled ... lifetime 184325 ms)
+=> stopped by itself ~184s after start (180s maxRingSeconds + slow-emulator timer latency); service absent from dumpsys at 10:28:06
+11-05 10:27:27.808   575   575 I notification_canceled: [0|app.bungaealert|7|null|10192,8,184325,184325,0,-1,-1,NULL]

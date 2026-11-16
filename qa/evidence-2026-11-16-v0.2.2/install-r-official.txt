@@ -1,0 +1,14 @@
+=== BEFORE ===
+    versionCode=1 minSdk=26 targetSdk=37
+    versionName=1.0.0
+    signatures=PackageSignatures{1c2bfad version:2, signatures:[871adeb2], past signatures:[]}
+=== adb install -r official v0.2.2 ===
+Performing Streamed Install
+adb: failed to install /workspace/builds/bungae-v022/dist/bungae-alert-v0.2.2-vc6.apk: Failure [INSTALL_FAILED_UPDATE_INCOMPATIBLE: Existing package app.bungaealert signatures do not match newer version; ignoring!]
+
+INSTALL_EXIT:1
+=== AFTER ===
+    versionCode=1 minSdk=26 targetSdk=37
+    versionName=1.0.0
+    signatures=PackageSignatures{1c2bfad version:2, signatures:[871adeb2], past signatures:[]}
+package:/data/app/~~6hVBm1ar8fndKijZkvJ6Rw==/app.bungaealert-ZFGG2f7hx73CdcKgLIu1CA==/base.apk

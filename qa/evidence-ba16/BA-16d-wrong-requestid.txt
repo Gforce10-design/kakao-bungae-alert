@@ -1,0 +1,4 @@
+# (d) SIMULATED mock replied with a verdict (isMatch=true) carrying a WRONG requestId (00000000-dead-beef-...) after the real POST for 'rid 77b88c2e-...'. stub when=876.288 -> alert when=921.836 (emu clock) => 45.5 s
+webhook_post request_rid= 77b88c2e-9a8f-4daf-b794-56b2469bc614 sent_rid= None ntfy_status= None
+ntfy_publish request_rid= 77b88c2e-9a8f-4daf-b794-56b2469bc614 sent_rid= 00000000-dead-beef-0000-000000000000 ntfy_status= 200
+detection: 번개 모집 오늘 2시 | score 68 | alerted True meetup | ... 보조판정 없음, 점수와 기준 비교  (wrong-id verdict ignored; fell back at timeout)

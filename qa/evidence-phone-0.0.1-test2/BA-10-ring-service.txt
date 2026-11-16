@@ -1,0 +1,4 @@
+    createTime=-38s226ms startingBgTimeout=--
+    lastActivity=-38s200ms restartTime=-- createdFromFg=true
+    isForeground=true foregroundId=7 types=40000000 foregroundNoti=Notification(channel=bungae_alarm shortcut=null contentView=null vibrate=null sound=null defaults=0x0 flags=0xe2 color=0x00000000 category=alarm groupKey=silent actions=1 vis=PRIVATE)
+    createTime=-1m40s165ms startingBgTimeout=--
